@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { BrowserRouter as Router, Route, Routes, Link, Navigate, useNavigate } from "react-router-dom";
+import { BrowserRouter as Router, Route, Routes, Link, Navigate } from "react-router-dom";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Home from "./pages/Home";
@@ -10,7 +10,6 @@ import "./App.css";
 const App = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
-  // Check authentication status when component mounts and when auth token changes
   useEffect(() => {
     const checkAuth = () => {
       const token = localStorage.getItem('authToken');
@@ -18,8 +17,6 @@ const App = () => {
     };
 
     checkAuth();
-    
-    // Prevent back button after logout
     window.addEventListener('popstate', checkAuth);
     
     return () => {
@@ -28,12 +25,9 @@ const App = () => {
   }, []);
 
   const handleSignOut = () => {
-    // Clear any stored user data/tokens
     localStorage.removeItem('authToken');
     localStorage.removeItem('userRole');
     setIsAuthenticated(false);
-    
-    // Clear browser history and redirect to home
     window.history.pushState(null, '', '/');
     window.location.href = '/';
   };
@@ -43,19 +37,19 @@ const App = () => {
       <div className="app-wrapper">
         <nav className="nav-container">
           <div className="nav-content">
-            <h1 className="app-title">Information System</h1>
+            <h1 className="app-title">HireMe</h1>
             <div className="nav-links">
               {isAuthenticated ? (
-                // Authenticated navigation links
                 <>
                   <Link to="/dashboard" className="nav-link">Dashboard</Link>
-                  <Link to="/profile" className="nav-link">Profile</Link>
+                  <Link to="/chat" className="nav-link">Chat</Link>
+                  <Link to="/about" className="nav-link">About Us</Link>
+                  <i className="fas fa-bell notification-icon"></i>
                   <button onClick={handleSignOut} className="nav-link signout-btn">
                     Sign Out
                   </button>
                 </>
               ) : (
-                // Non-authenticated navigation links
                 <>
                   <Link to="/" className="nav-link">Home</Link>
                   <Link to="/login" className="nav-link">Login</Link>
@@ -66,24 +60,22 @@ const App = () => {
           </div>
         </nav>
 
-        <main className="main-content">
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/login" element={
-              !isAuthenticated ? <Login setIsAuthenticated={setIsAuthenticated} /> : <Navigate to="/dashboard" />
-            } />
-            <Route path="/register" element={
-              !isAuthenticated ? <Register /> : <Navigate to="/dashboard" />
-            } />
-            <Route path="/dashboard" element={
-              isAuthenticated ? <Dashboard /> : <Navigate to="/login" />
-            } />
-            <Route path="/profile" element={
-              isAuthenticated ? <Profile /> : <Navigate to="/login" />
-            } />
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
-        </main>
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/login" element={
+            !isAuthenticated ? <Login setIsAuthenticated={setIsAuthenticated} /> : <Navigate to="/dashboard" />
+          } />
+          <Route path="/register" element={
+            !isAuthenticated ? <Register /> : <Navigate to="/dashboard" />
+          } />
+          <Route path="/dashboard" element={
+            isAuthenticated ? <Dashboard /> : <Navigate to="/login" />
+          } />
+          <Route path="/profile" element={
+            isAuthenticated ? <Profile /> : <Navigate to="/login" />
+          } />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
       </div>
     </Router>
   );

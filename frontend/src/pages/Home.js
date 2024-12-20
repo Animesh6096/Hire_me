@@ -1,7 +1,7 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import "./Home.css";
-import welcomeImage from "/Users/animesh/Documents/Project/Hire_me/frontend/src/—Pngtree—work hand drawn purple office_5049440.png"; // Add your image to assets folder
+import welcomeImage from "../assets/welcome.png";
 
 function Home() {
   const navigate = useNavigate();

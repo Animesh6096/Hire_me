@@ -43,30 +43,43 @@
 }
 
 .nav-container {
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(26, 27, 59, 0.95);
   backdrop-filter: blur(4px);
   padding: 1rem 2rem;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
 }
 
-.nav-content {
-  max-width: 1200px;
-  margin: 0 auto;
+/* .nav-content {
+  max-width: 1400px;
+  margin: 0 3rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  padding: 0 3rem;
+} */
+
+.nav-content {
+  width: 100%;  /* Changed from max-width: 1400px to width: 100% */
+  margin: 0 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 4rem;  /* Added some padding for spacing */
 }
 
 .app-title {
   color: #fff;
-  font-size: 1.5rem;
+  font-size: 2rem;
   font-weight: 600;
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  margin-left: -4rem;
 }
 
 .nav-links {
   display: flex;
-  gap: 1.5rem;
+  gap: 2rem;
+  align-items: center;
+  margin-right: -2rem;
 }
 
 .nav-link {
@@ -159,8 +172,8 @@ body {
   border: none;
   cursor: pointer;
   font-family: inherit;
-  font-size: inherit;
-  color: inherit;
+  font-size: 1rem;
+  color: #fff;
   padding: 0.5rem 1rem;
   border-radius: 5px;
   transition: all 0.3s ease;
@@ -169,4 +182,28 @@ body {
 .signout-btn:hover {
   background: rgba(255, 255, 255, 0.1);
   color: #ff6b6b;
+}
+
+/* Add or update these styles */
+.nav-link i {
+  font-size: 1.2rem;
+}
+
+.nav-link:hover i {
+  color: #646cff;
+}
+
+/* Update notification icon styles */
+.notification-icon {
+  color: #fff;
+  font-size: 1.2rem;
+  cursor: pointer;
+  transition: color 0.3s ease;
+  padding: 0.5rem 1rem;
+  display: flex;
+  align-items: center;
+}
+
+.notification-icon:hover {
+  color: #646cff;
 }
