@@ -217,4 +217,36 @@
 
 .modal-content::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.3);
+}
+
+.user-info-content {
+  padding: 20px;
+}
+
+.user-info {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.info-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.info-group label {
+  font-weight: bold;
+  min-width: 100px;
+}
+
+.info-group p {
+  margin: 0;
+  color: #ffffff;
+}
+
+.error {
+  color: #dc3545;
+  text-align: center;
+  margin: 10px 0;
 } 

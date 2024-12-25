@@ -4,7 +4,6 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Home from "./pages/Home";
 import Dashboard from "./pages/Dashboard";
-import Profile from "./pages/Profile";
 import "./App.css";
 
 const App = () => {
@@ -27,6 +26,7 @@ const App = () => {
   const handleSignOut = () => {
     localStorage.removeItem('authToken');
     localStorage.removeItem('userRole');
+    localStorage.removeItem('user_id');
     setIsAuthenticated(false);
     window.history.pushState(null, '', '/');
     window.location.href = '/';
@@ -70,9 +70,6 @@ const App = () => {
           } />
           <Route path="/dashboard" element={
             isAuthenticated ? <Dashboard /> : <Navigate to="/login" />
-          } />
-          <Route path="/profile" element={
-            isAuthenticated ? <Profile /> : <Navigate to="/login" />
           } />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

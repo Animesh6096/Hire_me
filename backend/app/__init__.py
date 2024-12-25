@@ -9,7 +9,15 @@ def create_app():
 
     # Initialize Extensions
     db.init_app(app)
-    CORS(app)
+    
+    # Configure CORS to allow requests from frontend
+    CORS(app, resources={
+        r"/*": {
+            "origins": ["http://localhost:3000"],
+            "methods": ["GET", "POST", "PUT", "DELETE"],
+            "allow_headers": ["Content-Type"]
+        }
+    })
 
     # Register Routes
     app.register_blueprint(bp)

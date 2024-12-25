@@ -36,5 +36,12 @@ class User:
         return User.get_collection().find_one({"email": email})
 
     @staticmethod
+    def find_by_id(user_id):
+        try:
+            return User.get_collection().find_one({"_id": ObjectId(user_id)})
+        except:
+            return None
+
+    @staticmethod
     def check_password(stored_password, provided_password):
         return check_password_hash(stored_password, provided_password)

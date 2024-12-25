@@ -1,10 +1,15 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import api from "../services/api";
 import "./Dashboard.css";
 
 function Dashboard() {
   const navigate = useNavigate();
   const [showNewPostForm, setShowNewPostForm] = useState(false);
+  const [showUserInfo, setShowUserInfo] = useState(false);
+  const [userInfo, setUserInfo] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
   const [newPost, setNewPost] = useState({
     jobTitle: '',
     description: '',
@@ -39,6 +44,29 @@ function Dashboard() {
     });
   };
 
+  const fetchUserInfo = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const userId = localStorage.getItem('user_id');
+      if (!userId) {
+        throw new Error('User ID not found. Please login again.');
+      }
+      const response = await api.get(`/users/${userId}`);
+      setUserInfo(response.data);
+    } catch (err) {
+      console.error('Error fetching user info:', err);
+      setError(err.message || 'Failed to fetch user information');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleProfileClick = () => {
+    setShowUserInfo(true);
+    fetchUserInfo();
+  };
+
   return (
     <>
       <div className="sidebar">
@@ -69,12 +97,50 @@ function Dashboard() {
             <i className="fas fa-search"></i>
             Search
           </button>
-          <button className="sidebar-btn" onClick={() => navigate('/profile')}>
+          <button className="sidebar-btn" onClick={handleProfileClick}>
             <i className="fas fa-user-circle"></i>
             My Profile
           </button>
         </div>
       </div>
+
+      {/* User Info Modal */}
+      {showUserInfo && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <div className="modal-header">
+              <h2>My Profile</h2>
+              <button className="close-btn" onClick={() => setShowUserInfo(false)}>
+                <i className="fas fa-times"></i>
+              </button>
+            </div>
+            <div className="user-info-content">
+              {loading && <p>Loading...</p>}
+              {error && <p className="error">{error}</p>}
+              {userInfo && (
+                <div className="user-info">
+                  <div className="info-group">
+                    <label>First Name:</label>
+                    <p>{userInfo.firstName}</p>
+                  </div>
+                  <div className="info-group">
+                    <label>Last Name:</label>
+                    <p>{userInfo.lastName}</p>
+                  </div>
+                  <div className="info-group">
+                    <label>Email:</label>
+                    <p>{userInfo.email}</p>
+                  </div>
+                  <div className="info-group">
+                    <label>Country:</label>
+                    <p>{userInfo.country}</p>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {showNewPostForm && (
         <div className="modal-overlay">
