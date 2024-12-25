@@ -1,17 +1,18 @@
 from werkzeug.security import generate_password_hash, check_password_hash
-# from flask import current_app
 from app.extensions import db
 from bson import ObjectId
 from pymongo import MongoClient
+from datetime import datetime
+from app.config import Config
 
-client = MongoClient("mongodb+srv://animesh:hireme001@hireme.rjrcf.mongodb.net/?retryWrites=true&w=majority&appName=hireme")
+# Connect to MongoDB using connection string from config
+client = MongoClient(Config.MONGO_URI)
 db = client['hireme']
 users_collection = db['users']
 
 class User:
     @staticmethod
     def get_collection():
-        # Access the 'users' get_collection within the app context
         return db['users']
 
     @staticmethod
@@ -19,11 +20,13 @@ class User:
         # Hash password before saving
         hashed_password = generate_password_hash(data['password'])
         user = {
-            "name": data['name'],
+            "firstName": data['firstName'],
+            "lastName": data['lastName'],
             "email": data['email'],
+            "country": data['country'],
             "password_hash": hashed_password,
             "role": data.get('role', 'User'),  # Default role is 'User'
-            "department": data['department'],
+            "created_at": datetime.utcnow()
         }
         result = User.get_collection().insert_one(user)
         return str(result.inserted_id)

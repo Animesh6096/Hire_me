@@ -5,10 +5,11 @@ import "./Register.css";
 
 function Register() {
   const [form, setForm] = useState({
-    name: "",
+    firstName: "",
+    lastName: "",
     email: "",
+    country: "",
     password: "",
-    department: "",
   });
   const [error, setError] = useState("");
   const navigate = useNavigate();
@@ -35,9 +36,17 @@ function Register() {
         <h2 className="form-title">Register</h2>
         <input
           className="input-field"
-          name="name"
-          placeholder="Name"
-          value={form.name}
+          name="firstName"
+          placeholder="First Name"
+          value={form.firstName}
+          onChange={handleChange}
+          required
+        />
+        <input
+          className="input-field"
+          name="lastName"
+          placeholder="Last Name"
+          value={form.lastName}
           onChange={handleChange}
           required
         />
@@ -52,18 +61,18 @@ function Register() {
         />
         <input
           className="input-field"
-          name="password"
-          type="password"
-          placeholder="Password"
-          value={form.password}
+          name="country"
+          placeholder="Country"
+          value={form.country}
           onChange={handleChange}
           required
         />
         <input
           className="input-field"
-          name="department"
-          placeholder="Department"
-          value={form.department}
+          name="password"
+          type="password"
+          placeholder="Password"
+          value={form.password}
           onChange={handleChange}
           required
         />
