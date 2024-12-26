@@ -12,12 +12,22 @@ function Login({ setIsAuthenticated }) {
   const handleLogin = async (e) => {
     e.preventDefault();
     try {
+      console.log('Attempting login with:', { email });
       const response = await api.post("/users/login", { email, password });
-      const { role, token } = response.data;
+      console.log('Login response:', response.data);  // Debug log
+      
+      const { token, role, user_id } = response.data;
+      console.log('Extracted data:', { token, role, user_id });  // Debug log
 
-      // Store user role and token
+      // Store token, user role and user_id
+      localStorage.setItem("token", token);
       localStorage.setItem("userRole", role);
-      localStorage.setItem("authToken", token);
+      localStorage.setItem("user_id", user_id);
+      console.log('Stored in localStorage:', { 
+        storedToken: localStorage.getItem("token"),
+        storedRole: localStorage.getItem("userRole"),
+        storedUserId: localStorage.getItem("user_id")
+      });  // Debug log
       
       // Set authentication state
       setIsAuthenticated(true);
@@ -25,7 +35,8 @@ function Login({ setIsAuthenticated }) {
       // Navigate to dashboard
       navigate("/dashboard");
     } catch (err) {
-      setError("Login failed. Please check your email and password.");
+      console.error('Login error:', err.response?.data || err.message);  // Debug log
+      setError(err.response?.data?.error || "Login failed. Please check your email and password.");
     }
   };
 
