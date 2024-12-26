@@ -6,7 +6,7 @@ bp = Blueprint('users', __name__, url_prefix='/users')
 
 @bp.route('/', methods=['GET'])
 def home():
-    return jsonify({"message": "Welcome to the University Archival System!"})
+    return jsonify({"message": "Welcome to Hireme"})
 
 @bp.route('/register', methods=['POST'])
 def register():
