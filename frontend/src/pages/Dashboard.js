@@ -10,6 +10,7 @@ function Dashboard() {
   const [userInfo, setUserInfo] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [successMessage, setSuccessMessage] = useState('');
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState({
     firstName: '',
@@ -52,20 +53,31 @@ function Dashboard() {
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // TODO: Add API call to save the post
-    console.log('New post:', newPost);
-    setShowNewPostForm(false);
-    setNewPost({
-      jobTitle: '',
-      description: '',
-      requiredSkills: '',
-      requiredTime: '',
-      location: '',
-      type: 'remote',
-      salary: ''
-    });
+    try {
+      setLoading(true);
+      const response = await api.post('/posts/create', newPost);
+      console.log('Post created:', response.data);
+      setShowNewPostForm(false);
+      setSuccessMessage('Post created successfully!');
+      setTimeout(() => setSuccessMessage(''), 3000);
+      setNewPost({
+        jobTitle: '',
+        description: '',
+        requiredSkills: '',
+        requiredTime: '',
+        location: '',
+        type: 'remote',
+        salary: ''
+      });
+    } catch (error) {
+      console.error('Error creating post:', error);
+      setError('Failed to create post. Please try again.');
+      setTimeout(() => setError(null), 3000);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const fetchUserInfo = async () => {
@@ -571,6 +583,20 @@ function Dashboard() {
               )}
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Add success message display */}
+      {successMessage && (
+        <div className="success-message">
+          <i className="fas fa-check-circle"></i> {successMessage}
+        </div>
+      )}
+
+      {/* Add error message display */}
+      {error && (
+        <div className="error-message">
+          <i className="fas fa-exclamation-circle"></i> {error}
         </div>
       )}
 
