@@ -33,10 +33,23 @@ class User:
             "bio": "",
             "education": [],
             "skills": [],
-            "experience": []
+            "experience": [],
+            "posts": []  # Initialize empty posts array
         }
         result = User.get_collection().insert_one(user)
         return str(result.inserted_id)
+
+    @staticmethod
+    def add_post(user_id, post_id):
+        try:
+            User.get_collection().update_one(
+                {"_id": ObjectId(user_id)},
+                {"$push": {"posts": str(post_id)}}
+            )
+            return True
+        except Exception as e:
+            print(f"Error adding post to user: {e}")
+            return False
 
     @staticmethod
     def find_by_email(email):
