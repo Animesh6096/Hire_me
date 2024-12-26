@@ -16,13 +16,15 @@ function Login({ setIsAuthenticated }) {
       const response = await api.post("/users/login", { email, password });
       console.log('Login response:', response.data);  // Debug log
       
-      const { role, user_id } = response.data;
-      console.log('Extracted data:', { role, user_id });  // Debug log
+      const { token, role, user_id } = response.data;
+      console.log('Extracted data:', { token, role, user_id });  // Debug log
 
-      // Store user role and user_id
+      // Store token, user role and user_id
+      localStorage.setItem("token", token);
       localStorage.setItem("userRole", role);
       localStorage.setItem("user_id", user_id);
       console.log('Stored in localStorage:', { 
+        storedToken: localStorage.getItem("token"),
         storedRole: localStorage.getItem("userRole"),
         storedUserId: localStorage.getItem("user_id")
       });  // Debug log
