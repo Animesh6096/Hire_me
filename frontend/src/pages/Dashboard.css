@@ -1049,4 +1049,39 @@
   background: rgba(244, 67, 54, 0.1);
   border: 1px solid rgba(244, 67, 54, 0.2);
   color: #ff4d4d;
+}
+
+.post-creator {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 15px;
+  padding-bottom: 15px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.post-creator img {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #646cff;
+}
+
+.post-creator i {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(100, 108, 255, 0.15);
+  color: #646cff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+}
+
+.post-creator span {
+  color: #fff;
+  font-size: 0.95rem;
+  font-weight: 500;
 } 

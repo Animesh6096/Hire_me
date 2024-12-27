@@ -44,4 +44,15 @@ class Post:
         # Convert ObjectId to string for JSON serialization
         for post in posts:
             post['_id'] = str(post['_id'])
+        return posts
+
+    @staticmethod
+    def get_other_posts(current_user_id):
+        # Find all posts where user_id is not the current user's ID
+        posts = list(posts_collection.find({"user_id": {"$ne": current_user_id}}))
+        # Convert ObjectId to string for JSON serialization
+        for post in posts:
+            post['_id'] = str(post['_id'])
+        # Sort by creation date, newest first
+        posts.sort(key=lambda x: x['created_at'], reverse=True)
         return posts 

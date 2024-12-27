@@ -13,7 +13,9 @@ function Dashboard() {
   const [successMessage, setSuccessMessage] = useState('');
   const [isEditing, setIsEditing] = useState(false);
   const [userPosts, setUserPosts] = useState([]);
+  const [otherPosts, setOtherPosts] = useState([]);
   const [showPosts, setShowPosts] = useState(false);
+  const [showOtherPosts, setShowOtherPosts] = useState(false);
   const [editData, setEditData] = useState({
     firstName: '',
     lastName: '',
@@ -303,8 +305,29 @@ function Dashboard() {
     }
   };
 
+  const fetchOtherPosts = async () => {
+    try {
+      setLoading(true);
+      const response = await api.get('/posts/other-posts');
+      setOtherPosts(response.data.posts);
+      setError(null);
+    } catch (err) {
+      console.error('Error fetching posts:', err);
+      setError('Failed to fetch posts');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSeekingClick = () => {
+    setShowOtherPosts(true);
+    setShowPosts(false); // Hide recruiting posts if they were showing
+    fetchOtherPosts();
+  };
+
   const handleRecruitingClick = () => {
     setShowPosts(true);
+    setShowOtherPosts(false); // Hide seeking posts if they were showing
     fetchUserPosts();
   };
 
@@ -312,7 +335,7 @@ function Dashboard() {
     <div className="dashboard-container">
       <div className="sidebar">
         <div className="sidebar-buttons">
-          <button className="sidebar-btn">
+          <button className="sidebar-btn" onClick={handleSeekingClick}>
             <i className="fas fa-search"></i>
             Seeking
           </button>
@@ -747,6 +770,37 @@ function Dashboard() {
             ) : (
               <div className="posts-grid">
                 {userPosts.map((post) => (
+                  <div key={post._id} className="post-card">
+                    <h3>{post.jobTitle}</h3>
+                    <p><strong>Type:</strong> {post.type}</p>
+                    <p><strong>Location:</strong> {post.location}</p>
+                    <p><strong>Required Time:</strong> {post.requiredTime}</p>
+                    <p><strong>Salary:</strong> {post.salary}</p>
+                    <p><strong>Required Skills:</strong> {post.requiredSkills}</p>
+                    <p className="post-description">{post.description}</p>
+                    <p className="post-date">
+                      <i className="fas fa-calendar-alt"></i>
+                      Posted on: {new Date(post.created_at).toLocaleDateString()}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {showOtherPosts && (
+          <div className="posts-container">
+            <h2>Available Job Posts</h2>
+            {loading ? (
+              <p>Loading posts...</p>
+            ) : error ? (
+              <p className="error-message">{error}</p>
+            ) : otherPosts.length === 0 ? (
+              <p>No posts available at the moment.</p>
+            ) : (
+              <div className="posts-grid">
+                {otherPosts.map((post) => (
                   <div key={post._id} className="post-card">
                     <h3>{post.jobTitle}</h3>
                     <p><strong>Type:</strong> {post.type}</p>
