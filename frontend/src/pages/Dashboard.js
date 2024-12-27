@@ -12,6 +12,8 @@ function Dashboard() {
   const [error, setError] = useState(null);
   const [successMessage, setSuccessMessage] = useState('');
   const [isEditing, setIsEditing] = useState(false);
+  const [userPosts, setUserPosts] = useState([]);
+  const [showPosts, setShowPosts] = useState(false);
   const [editData, setEditData] = useState({
     firstName: '',
     lastName: '',
@@ -287,15 +289,34 @@ function Dashboard() {
     }));
   };
 
+  const fetchUserPosts = async () => {
+    try {
+      setLoading(true);
+      const response = await api.get('/posts/user-posts');
+      setUserPosts(response.data.posts);
+      setError(null);
+    } catch (err) {
+      console.error('Error fetching posts:', err);
+      setError('Failed to fetch posts');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRecruitingClick = () => {
+    setShowPosts(true);
+    fetchUserPosts();
+  };
+
   return (
-    <>
+    <div className="dashboard-container">
       <div className="sidebar">
         <div className="sidebar-buttons">
           <button className="sidebar-btn">
             <i className="fas fa-search"></i>
             Seeking
           </button>
-          <button className="sidebar-btn">
+          <button className="sidebar-btn" onClick={handleRecruitingClick}>
             <i className="fas fa-user-tie"></i>
             Recruiting
           </button>
@@ -324,395 +345,428 @@ function Dashboard() {
         </div>
       </div>
 
-      {/* User Info Modal */}
-      {showUserInfo && (
-        <div className="modal-overlay">
-          <div className="modal-content profile-modal">
-            <div className="modal-header">
-              <h2>My Profile</h2>
-              <button className="close-btn" onClick={() => setShowUserInfo(false)}>
-                <i className="fas fa-times"></i>
-              </button>
-            </div>
-            <div className="user-info-content">
-              {loading && <div className="loading-spinner"><i className="fas fa-spinner fa-spin"></i></div>}
-              {error && <p className="error">{error}</p>}
-              {userInfo && (
-                <div className="user-info">
-                  <div className="profile-header">
-                    <div className="profile-avatar" onClick={handlePhotoClick}>
-                      {userInfo.profilePhoto ? (
-                        <img src={userInfo.profilePhoto} alt="Profile" />
-                      ) : (
-                        <i className="fas fa-user"></i>
-                      )}
-                      <div className="avatar-upload">
-                        <i className="fas fa-camera"></i>
-                      </div>
-                      <input
-                        type="file"
-                        ref={fileInputRef}
-                        onChange={handlePhotoChange}
-                        accept="image/*"
-                        style={{ display: 'none' }}
-                      />
-                    </div>
-                    <div className="profile-name">
-                      {isEditing ? (
-                        <div className="edit-name-section">
-                          <input
-                            type="text"
-                            value={editData.firstName}
-                            onChange={(e) => setEditData(prev => ({ ...prev, firstName: e.target.value }))}
-                            placeholder="First Name"
-                          />
-                          <input
-                            type="text"
-                            value={editData.lastName}
-                            onChange={(e) => setEditData(prev => ({ ...prev, lastName: e.target.value }))}
-                            placeholder="Last Name"
-                          />
-                          <input
-                            type="text"
-                            value={editData.country}
-                            onChange={(e) => setEditData(prev => ({ ...prev, country: e.target.value }))}
-                            placeholder="Country"
-                          />
-                          <textarea
-                            value={editData.bio}
-                            onChange={(e) => setEditData(prev => ({ ...prev, bio: e.target.value }))}
-                            placeholder="Write your bio..."
-                            className="bio-input"
-                          />
+      <div className="main-content">
+        {/* User Info Modal */}
+        {showUserInfo && (
+          <div className="modal-overlay">
+            <div className="modal-content profile-modal">
+              <div className="modal-header">
+                <h2>My Profile</h2>
+                <button className="close-btn" onClick={() => setShowUserInfo(false)}>
+                  <i className="fas fa-times"></i>
+                </button>
+              </div>
+              <div className="user-info-content">
+                {loading && <div className="loading-spinner"><i className="fas fa-spinner fa-spin"></i></div>}
+                {error && <p className="error">{error}</p>}
+                {userInfo && (
+                  <div className="user-info">
+                    <div className="profile-header">
+                      <div className="profile-avatar" onClick={handlePhotoClick}>
+                        {userInfo.profilePhoto ? (
+                          <img src={userInfo.profilePhoto} alt="Profile" />
+                        ) : (
+                          <i className="fas fa-user"></i>
+                        )}
+                        <div className="avatar-upload">
+                          <i className="fas fa-camera"></i>
                         </div>
-                      ) : (
-                        <>
-                          <h3>{`${userInfo.firstName} ${userInfo.lastName}`}</h3>
-                          <span className="profile-location">
-                            <i className="fas fa-map-marker-alt"></i> {userInfo.country}
-                          </span>
-                          <p className="profile-bio">{userInfo.bio || 'No bio added yet'}</p>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                  
-                  <div className="profile-details">
-                    <div className="info-card">
-                      <div className="info-card-header">
-                        <i className="fas fa-graduation-cap"></i>
-                        <h4>Education</h4>
-                        {isEditing && (
-                          <button className="add-btn" onClick={() => setShowAddEducation(true)}>
-                            <i className="fas fa-plus"></i>
-                          </button>
-                        )}
+                        <input
+                          type="file"
+                          ref={fileInputRef}
+                          onChange={handlePhotoChange}
+                          accept="image/*"
+                          style={{ display: 'none' }}
+                        />
                       </div>
-                      <div className="info-card-content">
-                        {showAddEducation && (
-                          <div className="add-education-form">
-                            <input
-                              type="text"
-                              value={newEducation.degree}
-                              onChange={(e) => setNewEducation(prev => ({ ...prev, degree: e.target.value }))}
-                              placeholder="Degree"
-                            />
-                            <input
-                              type="text"
-                              value={newEducation.institution}
-                              onChange={(e) => setNewEducation(prev => ({ ...prev, institution: e.target.value }))}
-                              placeholder="Institution"
-                            />
-                            <input
-                              type="text"
-                              value={newEducation.year}
-                              onChange={(e) => setNewEducation(prev => ({ ...prev, year: e.target.value }))}
-                              placeholder="Year"
-                            />
-                            <div className="form-actions">
-                              <button onClick={() => setShowAddEducation(false)} className="cancel-btn">Cancel</button>
-                              <button onClick={handleAddEducation} className="submit-btn">Add</button>
-                            </div>
-                          </div>
-                        )}
-                        {userInfo.education && userInfo.education.length > 0 ? (
-                          userInfo.education.map((edu, index) => (
-                            <div key={index} className="education-item">
-                              <h5>{edu.degree}</h5>
-                              <p>{edu.institution}</p>
-                              <span>{edu.year}</span>
-                              {isEditing && (
-                                <button className="delete-btn" onClick={() => handleDeleteEducation(edu.id)}>
-                                  <i className="fas fa-trash"></i>
-                                </button>
-                              )}
-                            </div>
-                          ))
-                        ) : (
-                          <p className="no-content">No education details added</p>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="info-card">
-                      <div className="info-card-header">
-                        <i className="fas fa-code"></i>
-                        <h4>Skills</h4>
-                      </div>
-                      <div className="info-card-content">
+                      <div className="profile-name">
                         {isEditing ? (
-                          <div className="skills-input-container">
-                            <div className="skills-tags">
-                              {editData.skills.map((skill, index) => (
-                                <span key={index} className="skill-tag">
-                                  {skill}
-                                  <button 
-                                    onClick={() => handleRemoveSkill(skill)}
-                                    className="remove-skill-btn"
-                                  >
-                                    <i className="fas fa-times"></i>
-                                  </button>
-                                </span>
-                              ))}
-                            </div>
+                          <div className="edit-name-section">
                             <input
                               type="text"
-                              value={newSkill}
-                              onChange={handleSkillInputChange}
-                              onKeyDown={handleSkillInputKeyDown}
-                              placeholder="Type a skill and press Enter"
-                              className="skill-input"
-                            />
-                          </div>
-                        ) : (
-                          userInfo.skills && userInfo.skills.length > 0 ? (
-                            <div className="skills-container">
-                              {userInfo.skills.map((skill, index) => (
-                                <span key={index} className="skill-tag">{skill}</span>
-                              ))}
-                            </div>
-                          ) : (
-                            <p className="no-content">No skills added</p>
-                          )
-                        )}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="profile-details">
-                    <div className="info-card">
-                      <div className="info-card-header">
-                        <i className="fas fa-briefcase"></i>
-                        <h4>Experience</h4>
-                        {isEditing && (
-                          <button className="add-btn" onClick={() => setShowAddExperience(true)}>
-                            <i className="fas fa-plus"></i>
-                          </button>
-                        )}
-                      </div>
-                      <div className="info-card-content">
-                        {showAddExperience && (
-                          <div className="add-experience-form">
-                            <input
-                              type="text"
-                              value={newExperience.position}
-                              onChange={(e) => setNewExperience(prev => ({ ...prev, position: e.target.value }))}
-                              placeholder="Position"
+                              value={editData.firstName}
+                              onChange={(e) => setEditData(prev => ({ ...prev, firstName: e.target.value }))}
+                              placeholder="First Name"
                             />
                             <input
                               type="text"
-                              value={newExperience.company}
-                              onChange={(e) => setNewExperience(prev => ({ ...prev, company: e.target.value }))}
-                              placeholder="Company"
+                              value={editData.lastName}
+                              onChange={(e) => setEditData(prev => ({ ...prev, lastName: e.target.value }))}
+                              placeholder="Last Name"
                             />
                             <input
                               type="text"
-                              value={newExperience.duration}
-                              onChange={(e) => setNewExperience(prev => ({ ...prev, duration: e.target.value }))}
-                              placeholder="Duration"
+                              value={editData.country}
+                              onChange={(e) => setEditData(prev => ({ ...prev, country: e.target.value }))}
+                              placeholder="Country"
                             />
                             <textarea
-                              value={newExperience.description}
-                              onChange={(e) => setNewExperience(prev => ({ ...prev, description: e.target.value }))}
-                              placeholder="Description"
+                              value={editData.bio}
+                              onChange={(e) => setEditData(prev => ({ ...prev, bio: e.target.value }))}
+                              placeholder="Write your bio..."
+                              className="bio-input"
                             />
-                            <div className="form-actions">
-                              <button onClick={() => setShowAddExperience(false)} className="cancel-btn">Cancel</button>
-                              <button onClick={handleAddExperience} className="submit-btn">Add</button>
-                            </div>
                           </div>
-                        )}
-                        {userInfo.experience && userInfo.experience.length > 0 ? (
-                          userInfo.experience.map((exp, index) => (
-                            <div key={index} className="experience-item">
-                              <h5>{exp.position}</h5>
-                              <p>{exp.company}</p>
-                              <span>{exp.duration}</span>
-                              <p className="experience-description">{exp.description}</p>
-                              {isEditing && (
-                                <button className="delete-btn" onClick={() => handleDeleteExperience(exp.id)}>
-                                  <i className="fas fa-trash"></i>
-                                </button>
-                              )}
-                            </div>
-                          ))
                         ) : (
-                          <p className="no-content">No experience details added</p>
+                          <>
+                            <h3>{`${userInfo.firstName} ${userInfo.lastName}`}</h3>
+                            <span className="profile-location">
+                              <i className="fas fa-map-marker-alt"></i> {userInfo.country}
+                            </span>
+                            <p className="profile-bio">{userInfo.bio || 'No bio added yet'}</p>
+                          </>
                         )}
                       </div>
                     </div>
-                  </div>
+                    
+                    <div className="profile-details">
+                      <div className="info-card">
+                        <div className="info-card-header">
+                          <i className="fas fa-graduation-cap"></i>
+                          <h4>Education</h4>
+                          {isEditing && (
+                            <button className="add-btn" onClick={() => setShowAddEducation(true)}>
+                              <i className="fas fa-plus"></i>
+                            </button>
+                          )}
+                        </div>
+                        <div className="info-card-content">
+                          {showAddEducation && (
+                            <div className="add-education-form">
+                              <input
+                                type="text"
+                                value={newEducation.degree}
+                                onChange={(e) => setNewEducation(prev => ({ ...prev, degree: e.target.value }))}
+                                placeholder="Degree"
+                              />
+                              <input
+                                type="text"
+                                value={newEducation.institution}
+                                onChange={(e) => setNewEducation(prev => ({ ...prev, institution: e.target.value }))}
+                                placeholder="Institution"
+                              />
+                              <input
+                                type="text"
+                                value={newEducation.year}
+                                onChange={(e) => setNewEducation(prev => ({ ...prev, year: e.target.value }))}
+                                placeholder="Year"
+                              />
+                              <div className="form-actions">
+                                <button onClick={() => setShowAddEducation(false)} className="cancel-btn">Cancel</button>
+                                <button onClick={handleAddEducation} className="submit-btn">Add</button>
+                              </div>
+                            </div>
+                          )}
+                          {userInfo.education && userInfo.education.length > 0 ? (
+                            userInfo.education.map((edu, index) => (
+                              <div key={index} className="education-item">
+                                <h5>{edu.degree}</h5>
+                                <p>{edu.institution}</p>
+                                <span>{edu.year}</span>
+                                {isEditing && (
+                                  <button className="delete-btn" onClick={() => handleDeleteEducation(edu.id)}>
+                                    <i className="fas fa-trash"></i>
+                                  </button>
+                                )}
+                              </div>
+                            ))
+                          ) : (
+                            <p className="no-content">No education details added</p>
+                          )}
+                        </div>
+                      </div>
 
-                  <div className="profile-actions">
-                    {isEditing ? (
-                      <>
-                        <button className="cancel-btn" onClick={handleCancelEdit}>
-                          <i className="fas fa-times"></i> Cancel
+                      <div className="info-card">
+                        <div className="info-card-header">
+                          <i className="fas fa-code"></i>
+                          <h4>Skills</h4>
+                        </div>
+                        <div className="info-card-content">
+                          {isEditing ? (
+                            <div className="skills-input-container">
+                              <div className="skills-tags">
+                                {editData.skills.map((skill, index) => (
+                                  <span key={index} className="skill-tag">
+                                    {skill}
+                                    <button 
+                                      onClick={() => handleRemoveSkill(skill)}
+                                      className="remove-skill-btn"
+                                    >
+                                      <i className="fas fa-times"></i>
+                                    </button>
+                                  </span>
+                                ))}
+                              </div>
+                              <input
+                                type="text"
+                                value={newSkill}
+                                onChange={handleSkillInputChange}
+                                onKeyDown={handleSkillInputKeyDown}
+                                placeholder="Type a skill and press Enter"
+                                className="skill-input"
+                              />
+                            </div>
+                          ) : (
+                            userInfo.skills && userInfo.skills.length > 0 ? (
+                              <div className="skills-container">
+                                {userInfo.skills.map((skill, index) => (
+                                  <span key={index} className="skill-tag">{skill}</span>
+                                ))}
+                              </div>
+                            ) : (
+                              <p className="no-content">No skills added</p>
+                            )
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="profile-details">
+                      <div className="info-card">
+                        <div className="info-card-header">
+                          <i className="fas fa-briefcase"></i>
+                          <h4>Experience</h4>
+                          {isEditing && (
+                            <button className="add-btn" onClick={() => setShowAddExperience(true)}>
+                              <i className="fas fa-plus"></i>
+                            </button>
+                          )}
+                        </div>
+                        <div className="info-card-content">
+                          {showAddExperience && (
+                            <div className="add-experience-form">
+                              <input
+                                type="text"
+                                value={newExperience.position}
+                                onChange={(e) => setNewExperience(prev => ({ ...prev, position: e.target.value }))}
+                                placeholder="Position"
+                              />
+                              <input
+                                type="text"
+                                value={newExperience.company}
+                                onChange={(e) => setNewExperience(prev => ({ ...prev, company: e.target.value }))}
+                                placeholder="Company"
+                              />
+                              <input
+                                type="text"
+                                value={newExperience.duration}
+                                onChange={(e) => setNewExperience(prev => ({ ...prev, duration: e.target.value }))}
+                                placeholder="Duration"
+                              />
+                              <textarea
+                                value={newExperience.description}
+                                onChange={(e) => setNewExperience(prev => ({ ...prev, description: e.target.value }))}
+                                placeholder="Description"
+                              />
+                              <div className="form-actions">
+                                <button onClick={() => setShowAddExperience(false)} className="cancel-btn">Cancel</button>
+                                <button onClick={handleAddExperience} className="submit-btn">Add</button>
+                              </div>
+                            </div>
+                          )}
+                          {userInfo.experience && userInfo.experience.length > 0 ? (
+                            userInfo.experience.map((exp, index) => (
+                              <div key={index} className="experience-item">
+                                <h5>{exp.position}</h5>
+                                <p>{exp.company}</p>
+                                <span>{exp.duration}</span>
+                                <p className="experience-description">{exp.description}</p>
+                                {isEditing && (
+                                  <button className="delete-btn" onClick={() => handleDeleteExperience(exp.id)}>
+                                    <i className="fas fa-trash"></i>
+                                  </button>
+                                )}
+                              </div>
+                            ))
+                          ) : (
+                            <p className="no-content">No experience details added</p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="profile-actions">
+                      {isEditing ? (
+                        <>
+                          <button className="cancel-btn" onClick={handleCancelEdit}>
+                            <i className="fas fa-times"></i> Cancel
+                          </button>
+                          <button className="submit-btn" onClick={handleSaveProfile}>
+                            <i className="fas fa-save"></i> Save Changes
+                          </button>
+                        </>
+                      ) : (
+                        <button className="edit-profile-btn" onClick={handleEditClick}>
+                          <i className="fas fa-edit"></i> Edit Profile
                         </button>
-                        <button className="submit-btn" onClick={handleSaveProfile}>
-                          <i className="fas fa-save"></i> Save Changes
-                        </button>
-                      </>
-                    ) : (
-                      <button className="edit-profile-btn" onClick={handleEditClick}>
-                        <i className="fas fa-edit"></i> Edit Profile
-                      </button>
-                    )}
+                      )}
+                    </div>
                   </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Add success message display */}
+        {successMessage && (
+          <div className="success-message">
+            <i className="fas fa-check-circle"></i> {successMessage}
+          </div>
+        )}
+
+        {/* Add error message display */}
+        {error && (
+          <div className="error-message">
+            <i className="fas fa-exclamation-circle"></i> {error}
+          </div>
+        )}
+
+        {showNewPostForm && (
+          <div className="modal-overlay">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h2>Create New Post</h2>
+                <button className="close-btn" onClick={() => setShowNewPostForm(false)}>
+                  <i className="fas fa-times"></i>
+                </button>
+              </div>
+              <form onSubmit={handleSubmit} className="new-post-form">
+                <div className="form-group">
+                  <label htmlFor="jobTitle">Job Title</label>
+                  <input
+                    type="text"
+                    id="jobTitle"
+                    name="jobTitle"
+                    value={newPost.jobTitle}
+                    onChange={handleInputChange}
+                    required
+                  />
                 </div>
-              )}
+
+                <div className="form-group">
+                  <label htmlFor="description">Description</label>
+                  <textarea
+                    id="description"
+                    name="description"
+                    value={newPost.description}
+                    onChange={handleInputChange}
+                    required
+                    rows="4"
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="requiredSkills">Required Skills</label>
+                  <input
+                    type="text"
+                    id="requiredSkills"
+                    name="requiredSkills"
+                    value={newPost.requiredSkills}
+                    onChange={handleInputChange}
+                    required
+                    placeholder="e.g., JavaScript, React, Node.js"
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="requiredTime">Required Time</label>
+                  <input
+                    type="text"
+                    id="requiredTime"
+                    name="requiredTime"
+                    value={newPost.requiredTime}
+                    onChange={handleInputChange}
+                    required
+                    placeholder="e.g., Full-time, Part-time, 20hrs/week"
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="location">Location</label>
+                  <input
+                    type="text"
+                    id="location"
+                    name="location"
+                    value={newPost.location}
+                    onChange={handleInputChange}
+                    required
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="type">Type</label>
+                  <select
+                    id="type"
+                    name="type"
+                    value={newPost.type}
+                    onChange={handleInputChange}
+                    required
+                  >
+                    <option value="remote">Remote</option>
+                    <option value="onsite">Onsite</option>
+                    <option value="hybrid">Hybrid</option>
+                  </select>
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="salary">Salary</label>
+                  <input
+                    type="text"
+                    id="salary"
+                    name="salary"
+                    value={newPost.salary}
+                    onChange={handleInputChange}
+                    required
+                    placeholder="e.g., $50,000/year or $30-40/hour"
+                  />
+                </div>
+
+                <div className="form-actions">
+                  <button type="button" className="cancel-btn" onClick={() => setShowNewPostForm(false)}>
+                    Cancel
+                  </button>
+                  <button type="submit" className="submit-btn">
+                    Create Post
+                  </button>
+                </div>
+              </form>
             </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Add success message display */}
-      {successMessage && (
-        <div className="success-message">
-          <i className="fas fa-check-circle"></i> {successMessage}
-        </div>
-      )}
-
-      {/* Add error message display */}
-      {error && (
-        <div className="error-message">
-          <i className="fas fa-exclamation-circle"></i> {error}
-        </div>
-      )}
-
-      {showNewPostForm && (
-        <div className="modal-overlay">
-          <div className="modal-content">
-            <div className="modal-header">
-              <h2>Create New Post</h2>
-              <button className="close-btn" onClick={() => setShowNewPostForm(false)}>
-                <i className="fas fa-times"></i>
-              </button>
-            </div>
-            <form onSubmit={handleSubmit} className="new-post-form">
-              <div className="form-group">
-                <label htmlFor="jobTitle">Job Title</label>
-                <input
-                  type="text"
-                  id="jobTitle"
-                  name="jobTitle"
-                  value={newPost.jobTitle}
-                  onChange={handleInputChange}
-                  required
-                />
+        {showPosts && (
+          <div className="posts-container">
+            <h2>Your Job Posts</h2>
+            {loading ? (
+              <p>Loading posts...</p>
+            ) : error ? (
+              <p className="error-message">{error}</p>
+            ) : userPosts.length === 0 ? (
+              <p>No posts found. Create your first job post!</p>
+            ) : (
+              <div className="posts-grid">
+                {userPosts.map((post) => (
+                  <div key={post._id} className="post-card">
+                    <h3>{post.jobTitle}</h3>
+                    <p><strong>Type:</strong> {post.type}</p>
+                    <p><strong>Location:</strong> {post.location}</p>
+                    <p><strong>Required Time:</strong> {post.requiredTime}</p>
+                    <p><strong>Salary:</strong> {post.salary}</p>
+                    <p><strong>Required Skills:</strong> {post.requiredSkills}</p>
+                    <p className="post-description">{post.description}</p>
+                    <p className="post-date">
+                      <i className="fas fa-calendar-alt"></i>
+                      Posted on: {new Date(post.created_at).toLocaleDateString()}
+                    </p>
+                  </div>
+                ))}
               </div>
-
-              <div className="form-group">
-                <label htmlFor="description">Description</label>
-                <textarea
-                  id="description"
-                  name="description"
-                  value={newPost.description}
-                  onChange={handleInputChange}
-                  required
-                  rows="4"
-                />
-              </div>
-
-              <div className="form-group">
-                <label htmlFor="requiredSkills">Required Skills</label>
-                <input
-                  type="text"
-                  id="requiredSkills"
-                  name="requiredSkills"
-                  value={newPost.requiredSkills}
-                  onChange={handleInputChange}
-                  required
-                  placeholder="e.g., JavaScript, React, Node.js"
-                />
-              </div>
-
-              <div className="form-group">
-                <label htmlFor="requiredTime">Required Time</label>
-                <input
-                  type="text"
-                  id="requiredTime"
-                  name="requiredTime"
-                  value={newPost.requiredTime}
-                  onChange={handleInputChange}
-                  required
-                  placeholder="e.g., Full-time, Part-time, 20hrs/week"
-                />
-              </div>
-
-              <div className="form-group">
-                <label htmlFor="location">Location</label>
-                <input
-                  type="text"
-                  id="location"
-                  name="location"
-                  value={newPost.location}
-                  onChange={handleInputChange}
-                  required
-                />
-              </div>
-
-              <div className="form-group">
-                <label htmlFor="type">Type</label>
-                <select
-                  id="type"
-                  name="type"
-                  value={newPost.type}
-                  onChange={handleInputChange}
-                  required
-                >
-                  <option value="remote">Remote</option>
-                  <option value="onsite">Onsite</option>
-                  <option value="hybrid">Hybrid</option>
-                </select>
-              </div>
-
-              <div className="form-group">
-                <label htmlFor="salary">Salary</label>
-                <input
-                  type="text"
-                  id="salary"
-                  name="salary"
-                  value={newPost.salary}
-                  onChange={handleInputChange}
-                  required
-                  placeholder="e.g., $50,000/year or $30-40/hour"
-                />
-              </div>
-
-              <div className="form-actions">
-                <button type="button" className="cancel-btn" onClick={() => setShowNewPostForm(false)}>
-                  Cancel
-                </button>
-                <button type="submit" className="submit-btn">
-                  Create Post
-                </button>
-              </div>
-            </form>
+            )}
           </div>
-        </div>
-      )}
-    </>
+        )}
+      </div>
+    </div>
   );
 }
 

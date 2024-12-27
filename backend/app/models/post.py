@@ -36,4 +36,12 @@ class Post:
         # Update user's posts array using the new method
         User.add_post(user_id, post_id)
         
-        return post_id 
+        return post_id
+
+    @staticmethod
+    def get_user_posts(user_id):
+        posts = list(posts_collection.find({"user_id": user_id}))
+        # Convert ObjectId to string for JSON serialization
+        for post in posts:
+            post['_id'] = str(post['_id'])
+        return posts 

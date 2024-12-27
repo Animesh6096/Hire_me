@@ -34,4 +34,13 @@ def create_post(current_user_id):
             "post_id": post_id
         }), 201
     except Exception as e:
+        return jsonify({"error": str(e)}), 400
+
+@posts.route('/user-posts', methods=['GET'])
+@token_required
+def get_user_posts(current_user_id):
+    try:
+        posts = Post.get_user_posts(current_user_id)
+        return jsonify({"posts": posts}), 200
+    except Exception as e:
         return jsonify({"error": str(e)}), 400 
