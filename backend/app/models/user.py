@@ -235,3 +235,14 @@ class User:
         except Exception as e:
             print(f"Error deleting experience: {str(e)}")
             return False
+
+    @staticmethod
+    def get_basic_info(user_id):
+        user = users_collection.find_one({"_id": ObjectId(user_id)})
+        if user:
+            return {
+                "firstName": user.get('firstName', ''),
+                "lastName": user.get('lastName', ''),
+                "profilePhoto": user.get('profilePhoto', None)
+            }
+        return None

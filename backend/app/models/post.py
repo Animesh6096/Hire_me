@@ -9,6 +9,7 @@ from app.models.user import User
 client = MongoClient(Config.MONGO_URI)
 db = client['hireme']
 posts_collection = db['posts']
+users_collection = db['users']
 
 class Post:
     @staticmethod
@@ -50,9 +51,17 @@ class Post:
     def get_other_posts(current_user_id):
         # Find all posts where user_id is not the current user's ID
         posts = list(posts_collection.find({"user_id": {"$ne": current_user_id}}))
-        # Convert ObjectId to string for JSON serialization
+        # Convert ObjectId to string for JSON serialization and add user info
         for post in posts:
             post['_id'] = str(post['_id'])
+            # Get creator info from users collection directly
+            creator = users_collection.find_one({"_id": ObjectId(post['user_id'])})
+            if creator:
+                post['creator'] = {
+                    'firstName': creator.get('firstName', ''),
+                    'lastName': creator.get('lastName', ''),
+                    'profilePhoto': creator.get('profilePhoto', None)
+                }
         # Sort by creation date, newest first
         posts.sort(key=lambda x: x['created_at'], reverse=True)
         return posts 

@@ -802,6 +802,14 @@ function Dashboard() {
               <div className="posts-grid">
                 {otherPosts.map((post) => (
                   <div key={post._id} className="post-card">
+                    <div className="post-creator">
+                      {post.creator?.profilePhoto ? (
+                        <img src={post.creator.profilePhoto} alt="Creator" />
+                      ) : (
+                        <i className="fas fa-user"></i>
+                      )}
+                      <span>{post.creator ? `${post.creator.firstName} ${post.creator.lastName}` : 'Unknown User'}</span>
+                    </div>
                     <h3>{post.jobTitle}</h3>
                     <p><strong>Type:</strong> {post.type}</p>
                     <p><strong>Location:</strong> {post.location}</p>
