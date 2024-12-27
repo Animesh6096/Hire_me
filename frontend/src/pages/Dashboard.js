@@ -48,6 +48,16 @@ function Dashboard() {
     salary: ''
   });
   const [newSkill, setNewSkill] = useState('');
+  const [showUsersModal, setShowUsersModal] = useState(false);
+  const [selectedUsers, setSelectedUsers] = useState([]);
+  const [modalTitle, setModalTitle] = useState('');
+  const [showCommentModal, setShowCommentModal] = useState(false);
+  const [selectedPostId, setSelectedPostId] = useState(null);
+  const [comments, setComments] = useState([]);
+  const [newComment, setNewComment] = useState('');
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editingPost, setEditingPost] = useState(null);
+  const [commentSortNewest, setCommentSortNewest] = useState(false);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -329,6 +339,183 @@ function Dashboard() {
     setShowPosts(true);
     setShowOtherPosts(false); // Hide seeking posts if they were showing
     fetchUserPosts();
+  };
+
+  const handleApply = async (postId) => {
+    try {
+      setLoading(true);
+      const response = await api.post(`/posts/${postId}/apply`);
+      if (response.status === 200) {
+        // Refresh the posts to get updated status
+        fetchOtherPosts();
+        setSuccessMessage(response.data.message);
+        setTimeout(() => setSuccessMessage(''), 3000);
+      }
+    } catch (err) {
+      console.error('Error applying:', err);
+      setError('Failed to apply');
+      setTimeout(() => setError(null), 3000);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleInterest = async (postId) => {
+    try {
+      setLoading(true);
+      const response = await api.post(`/posts/${postId}/interest`);
+      if (response.status === 200) {
+        // Refresh the posts to get updated status
+        fetchOtherPosts();
+        setSuccessMessage(response.data.message);
+        setTimeout(() => setSuccessMessage(''), 3000);
+      }
+    } catch (err) {
+      console.error('Error marking interest:', err);
+      setError('Failed to mark interest');
+      setTimeout(() => setError(null), 3000);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleShowApplicants = async (postId) => {
+    try {
+      setLoading(true);
+      const response = await api.get(`/posts/${postId}/applicants`);
+      setSelectedUsers(response.data.users);
+      setModalTitle('Applicants');
+      setShowUsersModal(true);
+    } catch (err) {
+      console.error('Error fetching applicants:', err);
+      setError('Failed to fetch applicants');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleShowInterested = async (postId) => {
+    try {
+      setLoading(true);
+      const response = await api.get(`/posts/${postId}/interested`);
+      setSelectedUsers(response.data.users);
+      setModalTitle('Interested Users');
+      setShowUsersModal(true);
+    } catch (err) {
+      console.error('Error fetching interested users:', err);
+      setError('Failed to fetch interested users');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const sortComments = (commentsToSort) => {
+    return [...commentsToSort].sort((a, b) => {
+      if (commentSortNewest) {
+        return new Date(b.created_at) - new Date(a.created_at);
+      }
+      return new Date(a.created_at) - new Date(b.created_at);
+    });
+  };
+
+  const handleShowComments = async (postId) => {
+    try {
+      setLoading(true);
+      const response = await api.get(`/posts/${postId}/comments`);
+      // Sort comments before setting them
+      const sortedComments = sortComments(response.data.comments || []);
+      setComments(sortedComments);
+      setSelectedPostId(postId);
+      setShowCommentModal(true);
+    } catch (err) {
+      console.error('Error fetching comments:', err);
+      setError('Failed to fetch comments');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAddComment = async (e) => {
+    e.preventDefault();
+    if (!newComment.trim()) return;
+
+    try {
+      setLoading(true);
+      const response = await api.post(`/posts/${selectedPostId}/comments`, {
+        text: newComment
+      });
+      if (response.status === 201) {
+        // Refresh comments
+        const commentsResponse = await api.get(`/posts/${selectedPostId}/comments`);
+        // Sort comments before setting them
+        const sortedComments = sortComments(commentsResponse.data.comments || []);
+        setComments(sortedComments);
+        setNewComment('');
+        setSuccessMessage('Comment added successfully');
+        setTimeout(() => setSuccessMessage(''), 3000);
+      }
+    } catch (err) {
+      console.error('Error adding comment:', err);
+      setError('Failed to add comment');
+      setTimeout(() => setError(null), 3000);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleEditPost = (post) => {
+    setEditingPost({
+      ...post,
+      requiredSkills: post.requiredSkills || ''
+    });
+    setShowEditModal(true);
+  };
+
+  const handleUpdatePost = async (e) => {
+    e.preventDefault();
+    try {
+      setLoading(true);
+      const response = await api.put(`/posts/${editingPost._id}`, editingPost);
+      if (response.status === 200) {
+        setShowEditModal(false);
+        fetchUserPosts();
+        setSuccessMessage('Post updated successfully');
+        setTimeout(() => setSuccessMessage(''), 3000);
+      }
+    } catch (err) {
+      console.error('Error updating post:', err);
+      setError('Failed to update post');
+      setTimeout(() => setError(null), 3000);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleEditInputChange = (e) => {
+    const { name, value } = e.target;
+    setEditingPost(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleDeletePost = async (postId) => {
+    try {
+      setLoading(true);
+      const response = await api.delete(`/posts/${postId}`);
+      if (response.status === 200) {
+        // Refresh the user's posts
+        fetchUserPosts();
+        setSuccessMessage('Post deleted successfully');
+        setTimeout(() => setSuccessMessage(''), 3000);
+      }
+    } catch (err) {
+      console.error('Error deleting post:', err);
+      setError('Failed to delete post');
+      setTimeout(() => setError(null), 3000);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -771,6 +958,13 @@ function Dashboard() {
               <div className="posts-grid">
                 {userPosts.map((post) => (
                   <div key={post._id} className="post-card">
+                    <button 
+                      className="post-delete-btn"
+                      onClick={() => handleDeletePost(post._id)}
+                      title="Delete Post"
+                    >
+                      <i className="fas fa-trash"></i>
+                    </button>
                     <h3>{post.jobTitle}</h3>
                     <p><strong>Type:</strong> {post.type}</p>
                     <p><strong>Location:</strong> {post.location}</p>
@@ -782,6 +976,45 @@ function Dashboard() {
                       <i className="fas fa-calendar-alt"></i>
                       Posted on: {new Date(post.created_at).toLocaleDateString()}
                     </p>
+                    <div className="post-stats">
+                      <button 
+                        className="stat-btn"
+                        onClick={() => handleShowApplicants(post._id)}
+                      >
+                        <i className="fas fa-user-check"></i>
+                        Applied: {post.applicants?.length || 0}
+                      </button>
+                      <button 
+                        className="stat-btn"
+                        onClick={() => handleShowInterested(post._id)}
+                      >
+                        <i className="fas fa-star"></i>
+                        Interested: {post.interests?.length || 0}
+                      </button>
+                      <button 
+                        className="stat-btn"
+                        onClick={() => handleShowComments(post._id)}
+                      >
+                        <i className="fas fa-comments"></i>
+                        Comments: {post.comments?.length || 0}
+                      </button>
+                    </div>
+                    <div className="post-admin-actions">
+                      <button 
+                        className="admin-btn edit-btn"
+                        onClick={() => handleEditPost(post)}
+                      >
+                        <i className="fas fa-edit"></i>
+                        Edit
+                      </button>
+                      <button 
+                        className="admin-btn delete-btn"
+                        onClick={() => handleDeletePost(post._id)}
+                      >
+                        <i className="fas fa-trash"></i>
+                        Delete
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -821,10 +1054,239 @@ function Dashboard() {
                       <i className="fas fa-calendar-alt"></i>
                       Posted on: {new Date(post.created_at).toLocaleDateString()}
                     </p>
+                    <div className="post-actions">
+                      <button 
+                        className={`action-btn apply-btn ${post.hasApplied ? 'applied' : ''}`}
+                        onClick={() => handleApply(post._id)}
+                        disabled={loading}
+                      >
+                        <i className={`fas ${post.hasApplied ? 'fa-check' : 'fa-paper-plane'}`}></i>
+                        {post.hasApplied ? 'Applied' : 'Apply'}
+                      </button>
+                      <button 
+                        className={`action-btn interest-btn ${post.isInterested ? 'interested' : ''}`}
+                        onClick={() => handleInterest(post._id)}
+                        disabled={loading}
+                      >
+                        <i className={`fas ${post.isInterested ? 'fa-star' : 'fa-star'}`}></i>
+                        {post.isInterested ? 'Interested' : 'Interest'}
+                      </button>
+                      <button 
+                        className="action-btn comment-btn"
+                        onClick={() => handleShowComments(post._id)}
+                        disabled={loading}
+                      >
+                        <i className="fas fa-comment"></i>
+                        Comments ({post.comments?.length || 0})
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>
             )}
+          </div>
+        )}
+
+        {/* Modal for showing applicants/interested users */}
+        {showUsersModal && selectedUsers && (
+          <div className="modal-overlay">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h2>{modalTitle}</h2>
+                <button className="close-btn" onClick={() => setShowUsersModal(false)}>
+                  <i className="fas fa-times"></i>
+                </button>
+              </div>
+              <div className="users-list">
+                {selectedUsers.map((user) => (
+                  <div key={user._id} className="user-item">
+                    {user.profilePhoto ? (
+                      <img src={user.profilePhoto} alt={user.firstName} />
+                    ) : (
+                      <i className="fas fa-user"></i>
+                    )}
+                    <span>{user.firstName} {user.lastName}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Modal for showing comments */}
+        {showCommentModal && (
+          <div className="modal-overlay">
+            <div className="modal-content comments-modal">
+              <div className="modal-header">
+                <h2>Comments</h2>
+                <button className="close-btn" onClick={() => setShowCommentModal(false)}>
+                  <i className="fas fa-times"></i>
+                </button>
+              </div>
+              <div className="comments-section">
+                <form onSubmit={handleAddComment} className="comment-form">
+                  <textarea
+                    value={newComment}
+                    onChange={(e) => setNewComment(e.target.value)}
+                    placeholder="Write a comment..."
+                    rows="3"
+                  />
+                  <button type="submit" className="submit-btn" disabled={loading}>
+                    <i className="fas fa-paper-plane"></i>
+                    Post Comment
+                  </button>
+                </form>
+                
+                <div className="comments-sort">
+                  <button 
+                    className="sort-btn"
+                    onClick={() => {
+                      setCommentSortNewest(!commentSortNewest);
+                      setComments(sortComments(comments));
+                    }}
+                  >
+                    <i className={`fas fa-sort-amount-${commentSortNewest ? 'up' : 'down'}`}></i>
+                    Sort by: {commentSortNewest ? "Newest first" : "Oldest first"}
+                  </button>
+                </div>
+
+                <div className="comments-list">
+                  {comments.map((comment, index) => (
+                    <div key={index} className="comment-item">
+                      <div className="comment-user">
+                        {comment.user?.profilePhoto ? (
+                          <img src={comment.user.profilePhoto} alt={comment.user.firstName} />
+                        ) : (
+                          <i className="fas fa-user"></i>
+                        )}
+                        <span>{comment.user?.firstName} {comment.user?.lastName}</span>
+                        <span className="comment-date">
+                          {new Date(comment.created_at).toLocaleDateString()}
+                        </span>
+                      </div>
+                      <p className="comment-text">{comment.text}</p>
+                    </div>
+                  ))}
+                  {comments.length === 0 && (
+                    <p className="no-comments">No comments yet. Be the first to comment!</p>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Edit Post Modal */}
+        {showEditModal && (
+          <div className="modal-overlay">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h2>Edit Post</h2>
+                <button className="close-btn" onClick={() => setShowEditModal(false)}>
+                  <i className="fas fa-times"></i>
+                </button>
+              </div>
+              <form onSubmit={handleUpdatePost} className="edit-post-form">
+                <div className="form-group">
+                  <label htmlFor="jobTitle">Job Title</label>
+                  <input
+                    type="text"
+                    id="jobTitle"
+                    name="jobTitle"
+                    value={editingPost?.jobTitle}
+                    onChange={handleEditInputChange}
+                    required
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="description">Description</label>
+                  <textarea
+                    id="description"
+                    name="description"
+                    value={editingPost?.description}
+                    onChange={handleEditInputChange}
+                    required
+                    rows="4"
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="requiredSkills">Required Skills</label>
+                  <input
+                    type="text"
+                    id="requiredSkills"
+                    name="requiredSkills"
+                    value={editingPost?.requiredSkills}
+                    onChange={handleEditInputChange}
+                    required
+                    placeholder="e.g., JavaScript, React, Node.js"
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="requiredTime">Required Time</label>
+                  <input
+                    type="text"
+                    id="requiredTime"
+                    name="requiredTime"
+                    value={editingPost?.requiredTime}
+                    onChange={handleEditInputChange}
+                    required
+                    placeholder="e.g., Full-time, Part-time, 20hrs/week"
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="location">Location</label>
+                  <input
+                    type="text"
+                    id="location"
+                    name="location"
+                    value={editingPost?.location}
+                    onChange={handleEditInputChange}
+                    required
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="type">Type</label>
+                  <select
+                    id="type"
+                    name="type"
+                    value={editingPost?.type}
+                    onChange={handleEditInputChange}
+                    required
+                  >
+                    <option value="remote">Remote</option>
+                    <option value="onsite">Onsite</option>
+                    <option value="hybrid">Hybrid</option>
+                  </select>
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="salary">Salary</label>
+                  <input
+                    type="text"
+                    id="salary"
+                    name="salary"
+                    value={editingPost?.salary}
+                    onChange={handleEditInputChange}
+                    required
+                    placeholder="e.g., $50,000/year or $30-40/hour"
+                  />
+                </div>
+
+                <div className="form-actions">
+                  <button type="button" className="cancel-btn" onClick={() => setShowEditModal(false)}>
+                    Cancel
+                  </button>
+                  <button type="submit" className="submit-btn">
+                    Update Post
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
         )}
       </div>

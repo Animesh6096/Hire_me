@@ -34,7 +34,9 @@ class User:
             "education": [],
             "skills": [],
             "experience": [],
-            "posts": []  # Initialize empty posts array
+            "posts": [],  # Initialize empty posts array
+            "applied": [],  # Array of post IDs user has applied to
+            "interested": []  # Array of post IDs user is interested in
         }
         result = User.get_collection().insert_one(user)
         return str(result.inserted_id)
@@ -246,3 +248,55 @@ class User:
                 "profilePhoto": user.get('profilePhoto', None)
             }
         return None
+
+    @staticmethod
+    def add_applied_post(user_id, post_id):
+        """Add a post to user's applied list"""
+        try:
+            result = users_collection.update_one(
+                {"_id": ObjectId(user_id)},
+                {"$addToSet": {"applied": post_id}}
+            )
+            return result.modified_count > 0
+        except Exception as e:
+            print(f"Error adding applied post: {str(e)}")
+            return False
+
+    @staticmethod
+    def remove_applied_post(user_id, post_id):
+        """Remove a post from user's applied list"""
+        try:
+            result = users_collection.update_one(
+                {"_id": ObjectId(user_id)},
+                {"$pull": {"applied": post_id}}
+            )
+            return result.modified_count > 0
+        except Exception as e:
+            print(f"Error removing applied post: {str(e)}")
+            return False
+
+    @staticmethod
+    def add_interested_post(user_id, post_id):
+        """Add a post to user's interested list"""
+        try:
+            result = users_collection.update_one(
+                {"_id": ObjectId(user_id)},
+                {"$addToSet": {"interested": post_id}}
+            )
+            return result.modified_count > 0
+        except Exception as e:
+            print(f"Error adding interested post: {str(e)}")
+            return False
+
+    @staticmethod
+    def remove_interested_post(user_id, post_id):
+        """Remove a post from user's interested list"""
+        try:
+            result = users_collection.update_one(
+                {"_id": ObjectId(user_id)},
+                {"$pull": {"interested": post_id}}
+            )
+            return result.modified_count > 0
+        except Exception as e:
+            print(f"Error removing interested post: {str(e)}")
+            return False
