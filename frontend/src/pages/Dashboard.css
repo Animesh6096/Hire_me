@@ -1127,6 +1127,7 @@ p, span {
   margin-bottom: 15px;
   padding-bottom: 15px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  position: relative;
 }
 
 .post-creator img {
@@ -1705,4 +1706,57 @@ p, span {
   background: #ffc107;
   color: white;
   border-color: #ffc107;
+}
+
+.follow-btn {
+  position: absolute;
+  right: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  background: #646cff;
+  color: white;
+}
+
+.follow-btn:hover {
+  background: #7c83ff;
+  transform: translateY(-2px);
+}
+
+.follow-btn.following {
+  background: rgba(255, 255, 255, 0.1);
+  color: #646cff;
+  border: 1px solid #646cff;
+}
+
+.follow-btn.following:hover {
+  background: rgba(244, 67, 54, 0.1);
+  color: #f44336;
+  border-color: #f44336;
+}
+
+.follow-btn i {
+  font-size: 0.85rem;
+  color: currentColor;
+}
+
+.follow-btn.following i {
+  color: #646cff;
+}
+
+.follow-btn.following:hover i {
+  color: #f44336;
+}
+
+.follow-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none;
 } 

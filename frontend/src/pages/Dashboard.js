@@ -61,6 +61,7 @@ function Dashboard() {
   const [interactionPosts, setInteractionPosts] = useState([]);
   const [showInteractions, setShowInteractions] = useState(false);
   const [interactionFilter, setInteractionFilter] = useState('all'); // 'all', 'interested', 'applied'
+  const [followStatus, setFollowStatus] = useState({});  // Store follow status for each user
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -564,6 +565,61 @@ function Dashboard() {
         return interactionPosts;
     }
   };
+
+  const handleFollow = async (post) => {
+    try {
+      const currentUserId = localStorage.getItem('user_id');
+      const creatorId = post.user_id; // Get the creator's ID from post's user_id field
+      
+      console.log('Attempting to follow/unfollow:', { currentUserId, creatorId });
+      
+      if (!currentUserId || !creatorId) {
+        console.log('Missing IDs:', { currentUserId, creatorId });
+        return;
+      }
+
+      // Call the follow API
+      const response = await api.post(`/users/${creatorId}/follow`);
+      console.log('Follow response:', response.data);
+
+      // Update the follow status in state
+      if (response.data) {
+        setFollowStatus(prev => ({
+          ...prev,
+          [creatorId]: response.data.is_following
+        }));
+      }
+    } catch (err) {
+      console.error('Follow error:', err);
+    }
+  };
+
+  const fetchFollowStatus = async (userId) => {
+    try {
+      const response = await api.getFollowStatus(userId);
+      setFollowStatus(prev => ({
+        ...prev,
+        [userId]: response.data.is_following
+      }));
+    } catch (err) {
+      console.error('Error fetching follow status:', err);
+    }
+  };
+
+  useEffect(() => {
+    const fetchFollowStatusForPosts = async () => {
+      const posts = showOtherPosts ? otherPosts : interactionPosts;
+      for (const post of posts) {
+        if (post.creator && post.creator._id !== localStorage.getItem('user_id')) {
+          await fetchFollowStatus(post.creator._id);
+        }
+      }
+    };
+
+    if (showOtherPosts || showInteractions) {
+      fetchFollowStatusForPosts();
+    }
+  }, [otherPosts, interactionPosts, showOtherPosts, showInteractions]);
 
   return (
     <div className="dashboard-container">
@@ -1106,6 +1162,19 @@ function Dashboard() {
                         <i className="fas fa-user"></i>
                       )}
                       <span>{post.creator ? `${post.creator.firstName} ${post.creator.lastName}` : 'Unknown User'}</span>
+                      {post.user_id && post.user_id !== localStorage.getItem('user_id') && (
+                        <button
+                          className={`follow-btn ${followStatus[post.user_id] ? 'following' : ''}`}
+                          onClick={() => {
+                            console.log('Clicking follow for post:', post);
+                            handleFollow(post);
+                          }}
+                          disabled={loading}
+                        >
+                          <i className={`fas ${followStatus[post.user_id] ? 'fa-user-minus' : 'fa-user-plus'}`}></i>
+                          {followStatus[post.user_id] ? 'Following' : 'Follow'}
+                        </button>
+                      )}
                     </div>
                     <h3>{post.jobTitle}</h3>
                     <p><strong>Type:</strong> {post.type}</p>
@@ -1397,6 +1466,19 @@ function Dashboard() {
                         <i className="fas fa-user"></i>
                       )}
                       <span>{post.creator ? `${post.creator.firstName} ${post.creator.lastName}` : 'Unknown User'}</span>
+                      {post.user_id && post.user_id !== localStorage.getItem('user_id') && (
+                        <button
+                          className={`follow-btn ${followStatus[post.user_id] ? 'following' : ''}`}
+                          onClick={() => {
+                            console.log('Clicking follow for post:', post);
+                            handleFollow(post);
+                          }}
+                          disabled={loading}
+                        >
+                          <i className={`fas ${followStatus[post.user_id] ? 'fa-user-minus' : 'fa-user-plus'}`}></i>
+                          {followStatus[post.user_id] ? 'Following' : 'Follow'}
+                        </button>
+                      )}
                     </div>
                     <h3>{post.jobTitle}</h3>
                     <p><strong>Type:</strong> {post.type}</p>

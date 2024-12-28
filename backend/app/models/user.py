@@ -308,3 +308,53 @@ class User:
         """Check if user has created any posts"""
         user = User.get_collection().find_one({"_id": ObjectId(user_id)})
         return user and len(user.get('posts', [])) > 0
+
+    @staticmethod
+    def follow_user(follower_id, user_to_follow_id):
+        """Add follower to user's followers and add user to follower's following"""
+        try:
+            # Add follower to user's followers list
+            User.get_collection().update_one(
+                {"_id": ObjectId(user_to_follow_id)},
+                {"$addToSet": {"followers": str(follower_id)}}
+            )
+            # Add user to follower's following list
+            User.get_collection().update_one(
+                {"_id": ObjectId(follower_id)},
+                {"$addToSet": {"following": str(user_to_follow_id)}}
+            )
+            return True
+        except Exception as e:
+            print(f"Error following user: {str(e)}")
+            return False
+
+    @staticmethod
+    def unfollow_user(follower_id, user_to_unfollow_id):
+        """Remove follower from user's followers and remove user from follower's following"""
+        try:
+            # Remove follower from user's followers list
+            User.get_collection().update_one(
+                {"_id": ObjectId(user_to_unfollow_id)},
+                {"$pull": {"followers": str(follower_id)}}
+            )
+            # Remove user from follower's following list
+            User.get_collection().update_one(
+                {"_id": ObjectId(follower_id)},
+                {"$pull": {"following": str(user_to_unfollow_id)}}
+            )
+            return True
+        except Exception as e:
+            print(f"Error unfollowing user: {str(e)}")
+            return False
+
+    @staticmethod
+    def is_following(follower_id, user_id):
+        """Check if follower_id is following user_id"""
+        try:
+            user = User.get_collection().find_one(
+                {"_id": ObjectId(follower_id), "following": str(user_id)}
+            )
+            return bool(user)
+        except Exception as e:
+            print(f"Error checking follow status: {str(e)}")
+            return False

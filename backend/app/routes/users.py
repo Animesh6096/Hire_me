@@ -7,6 +7,7 @@ from app.config import Config
 from werkzeug.utils import secure_filename
 import os
 from datetime import datetime, timedelta
+from flask_jwt_extended import jwt_required, get_jwt_identity
 
 users = Blueprint('users', __name__)
 
@@ -224,3 +225,45 @@ def delete_experience(current_user, user_id, experience_id):
     if User.delete_experience(user_id, experience_id):
         return jsonify({'message': 'Experience deleted successfully'}), 200
     return jsonify({'message': 'Error deleting experience'}), 400
+
+# Follow or unfollow a user
+@users.route('/<user_id>/follow', methods=['POST'])
+@token_required
+def follow_user(current_user, user_id):
+    """Follow or unfollow a user"""
+    try:
+        # Check if already following
+        is_following = User.is_following(current_user['_id'], user_id)
+        
+        if is_following:
+            # Unfollow
+            if User.unfollow_user(current_user['_id'], user_id):
+                return jsonify({
+                    'message': 'Successfully unfollowed user',
+                    'is_following': False
+                }), 200
+        else:
+            # Follow
+            if User.follow_user(current_user['_id'], user_id):
+                return jsonify({
+                    'message': 'Successfully followed user',
+                    'is_following': True
+                }), 200
+                
+        return jsonify({'message': 'Failed to update follow status'}), 400
+    except Exception as e:
+        return jsonify({'message': str(e)}), 500
+
+# Get the follow status for a user
+@users.route('/<user_id>/follow-status', methods=['GET'])
+@token_required
+def get_follow_status(current_user, user_id):
+    """Get the follow status for a user"""
+    try:
+        is_following = User.is_following(current_user['_id'], user_id)
+        
+        return jsonify({
+            'is_following': is_following
+        }), 200
+    except Exception as e:
+        return jsonify({'message': str(e)}), 500
