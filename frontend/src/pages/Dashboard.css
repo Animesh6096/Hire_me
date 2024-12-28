@@ -387,6 +387,39 @@ p, span {
   font-size: 0.9rem;
 }
 
+.profile-tags {
+  display: flex;
+  gap: 0.8rem;
+  margin: 0.8rem 0;
+}
+
+.profile-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0.8rem;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.profile-tag i {
+  font-size: 0.8rem;
+}
+
+.profile-tag.active {
+  background: rgba(46, 213, 115, 0.15);
+  color: #2ed573;
+  border: 1px solid rgba(46, 213, 115, 0.3);
+}
+
+.profile-tag.inactive {
+  background: rgba(255, 71, 87, 0.15);
+  color: #ff4757;
+  border: 1px solid rgba(255, 71, 87, 0.3);
+}
+
 .profile-details {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));

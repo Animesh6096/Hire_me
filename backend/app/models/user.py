@@ -36,7 +36,9 @@ class User:
             "experience": [],
             "posts": [],  # Initialize empty posts array
             "applied": [],  # Array of post IDs user has applied to
-            "interested": []  # Array of post IDs user is interested in
+            "interested": [],  # Array of post IDs user is interested in
+            "followers": [],  # Array of user IDs who follow this user
+            "following": []   # Array of user IDs this user follows
         }
         result = User.get_collection().insert_one(user)
         return str(result.inserted_id)
@@ -300,3 +302,9 @@ class User:
         except Exception as e:
             print(f"Error removing interested post: {str(e)}")
             return False
+
+    @staticmethod
+    def has_posts(user_id):
+        """Check if user has created any posts"""
+        user = User.get_collection().find_one({"_id": ObjectId(user_id)})
+        return user and len(user.get('posts', [])) > 0

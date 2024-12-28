@@ -681,6 +681,12 @@ function Dashboard() {
                             <span className="profile-location">
                               <i className="fas fa-map-marker-alt"></i> {userInfo.country}
                             </span>
+                            <div className="profile-tags">
+                              <span className={`profile-tag ${userInfo.posts?.length > 0 ? 'active' : 'inactive'}`}>
+                                <i className="fas fa-bullhorn"></i>
+                                {userInfo.posts?.length > 0 ? 'Recruiting' : 'Not Recruiting'}
+                              </span>
+                            </div>
                             <p className="profile-bio">{userInfo.bio || 'No bio added yet'}</p>
                           </>
                         )}
