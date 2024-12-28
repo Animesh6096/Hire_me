@@ -65,27 +65,37 @@ p, span {
 .sidebar-btn {
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: 10px;
+  padding: 12px 20px;
+  width: 100%;
   background: none;
   border: none;
-  color: white;
-  padding: 0.75rem;
-  width: 100%;
-  text-align: left;
   border-radius: 8px;
+  color: #fff;
+  font-size: 1rem;
   cursor: pointer;
   transition: all 0.3s ease;
-  font-size: 1rem;
+}
+
+.sidebar-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  transform: translateX(5px);
+}
+
+/* Active states for section buttons */
+.sidebar-btn.active-seeking,
+.sidebar-btn.active-recruiting,
+.sidebar-btn.active-interactions,
+.sidebar-btn.active-working {
+  background: #2c7a62;  /* Darker pastel green */
+  color: white;
+  font-weight: 500;
+  box-shadow: 0 0 15px rgba(44, 122, 98, 0.3);
 }
 
 .sidebar-btn i {
   width: 20px;
   font-size: 1.1rem;
-}
-
-.sidebar-btn:hover {
-  background: rgba(255, 255, 255, 0.1);
-  color: #646cff;
 }
 
 .sidebar-bottom {
@@ -999,8 +1009,8 @@ p, span {
   box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.2);
   backdrop-filter: blur(4px);
   border: 1px solid rgba(100, 108, 255, 0.1);
-  transition: all 0.3s ease;
   position: relative;
+  transition: all 0.3s ease;
   overflow: hidden;
   min-width: 0;
 }
@@ -1133,45 +1143,37 @@ p, span {
   font-weight: 500;
   cursor: pointer;
   transition: all 0.3s ease;
-  background: rgba(255, 255, 255, 0.1);
   color: white;
 }
 
-.action-btn:hover:not(:disabled) {
-  transform: translateY(-2px);
-}
-
-.action-btn:disabled {
-  opacity: 0.7;
-  cursor: not-allowed;
+.action-btn i {
+  font-size: 0.9rem;
 }
 
 .apply-btn {
-  background: rgba(100, 108, 255, 0.2);
-  color: #646cff;
+  background: #00a86b; /* Fresh green */
 }
 
-.apply-btn:hover:not(:disabled) {
-  background: rgba(100, 108, 255, 0.3);
+.apply-btn:hover {
+  background: #008f5d;
+  transform: translateY(-2px);
 }
 
 .apply-btn.applied {
-  background: rgba(100, 108, 255, 0.8);
-  color: white;
+  background: #2c7a62; /* Different shade of green */
 }
 
 .interest-btn {
-  background: rgba(255, 193, 7, 0.2);
-  color: #ffc107;
+  background: #ff1493; /* Deep pink */
 }
 
-.interest-btn:hover:not(:disabled) {
-  background: rgba(255, 193, 7, 0.3);
+.interest-btn:hover {
+  background: #e00f82;
+  transform: translateY(-2px);
 }
 
 .interest-btn.interested {
-  background: rgba(255, 193, 7, 0.8);
-  color: white;
+  background: #c71585; /* Medium violet red */
 }
 
 .post-stats {
@@ -1407,12 +1409,12 @@ p, span {
 }
 
 .comment-btn {
-  background: rgba(100, 108, 255, 0.2);
-  color: #646cff;
+  background: #1976d2; /* Keep the blue */
 }
 
 .comment-btn:hover:not(:disabled) {
-  background: rgba(100, 108, 255, 0.3);
+  background: #0d47a1;
+  transform: translateY(-2px);
 }
 
 .post-admin-actions {
@@ -1567,4 +1569,107 @@ p, span {
   right: 0;
   z-index: 1000;
   /* Keep other existing nav-container styles */
+}
+
+.interactions-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid rgba(100, 108, 255, 0.3);
+}
+
+.filter-buttons {
+  display: flex;
+  gap: 15px;
+}
+
+.filter-btn {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 8px;
+  background: rgba(100, 108, 255, 0.1);
+  color: #646cff;
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.filter-btn:hover {
+  background: rgba(100, 108, 255, 0.2);
+  transform: translateY(-2px);
+}
+
+.filter-btn.active {
+  background: #4f46e5;  /* Darker purple */
+  color: white;
+}
+
+.interaction-badges {
+  display: flex;
+  gap: 10px;
+  margin-top: 15px;
+  padding-top: 15px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px 8px 12px;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  position: relative;
+  color: white;
+}
+
+.applied-badge {
+  background: #2c7a62; /* Same as applied button */
+  border: none;
+}
+
+.interested-badge {
+  background: #c71585; /* Same as interested button */
+  border: none;
+}
+
+.remove-badge-btn {
+  background: rgba(255, 255, 255, 0.15);
+  border: none;
+  color: white;
+  padding: 0;
+  margin-left: 8px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.remove-badge-btn:hover {
+  background: rgba(255, 255, 255, 0.25);
+  transform: scale(1.1);
+}
+
+.remove-badge-btn i {
+  font-size: 0.85rem;
+}
+
+.applied-badge .remove-badge-btn:hover {
+  background: #646cff;
+  color: white;
+  border-color: #646cff;
+}
+
+.interested-badge .remove-badge-btn:hover {
+  background: #ffc107;
+  color: white;
+  border-color: #ffc107;
 } 
