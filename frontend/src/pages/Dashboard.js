@@ -629,6 +629,56 @@ function Dashboard() {
     }
   };
 
+  const handleModalFollow = async (userId) => {
+    try {
+      const response = await api.post(`/users/${userId}/follow`);
+      
+      if (response.data) {
+        // Update follow status
+        setFollowStatus(prev => ({
+          ...prev,
+          [userId]: response.data.is_following
+        }));
+        
+        // Refresh the lists if needed
+        if (showFollowersModal) {
+          const followersResponse = await api.get(`/users/${userInfo._id}/followers`);
+          setFollowModalUsers(followersResponse.data.users);
+        } else if (showFollowingModal) {
+          const followingResponse = await api.get(`/users/${userInfo._id}/following`);
+          setFollowModalUsers(followingResponse.data.users);
+        }
+
+        setSuccessMessage(response.data.message);
+        setTimeout(() => setSuccessMessage(''), 3000);
+      }
+    } catch (err) {
+      console.error('Follow error:', err);
+      setError('Failed to update follow status');
+      setTimeout(() => setError(null), 3000);
+    }
+  };
+
+  useEffect(() => {
+    const fetchModalUsersFollowStatus = async () => {
+      for (const user of followModalUsers) {
+        try {
+          const response = await api.get(`/users/${user._id}/follow-status`);
+          setFollowStatus(prev => ({
+            ...prev,
+            [user._id]: response.data.is_following
+          }));
+        } catch (err) {
+          console.error('Error fetching follow status:', err);
+        }
+      }
+    };
+
+    if (followModalUsers.length > 0) {
+      fetchModalUsersFollowStatus();
+    }
+  }, [followModalUsers]);
+
   useEffect(() => {
     const fetchFollowStatusForPosts = async () => {
       const posts = showOtherPosts ? otherPosts : interactionPosts;
@@ -1499,12 +1549,23 @@ function Dashboard() {
                 {followModalUsers.length > 0 ? (
                   followModalUsers.map((user) => (
                     <div key={user._id} className="user-item">
-                      {user.profilePhoto ? (
-                        <img src={user.profilePhoto} alt={user.firstName} />
-                      ) : (
-                        <i className="fas fa-user"></i>
+                      <div className="user-left">
+                        {user.profilePhoto ? (
+                          <img src={user.profilePhoto} alt={user.firstName} />
+                        ) : (
+                          <i className="fas fa-user"></i>
+                        )}
+                        <span className="user-name">{user.firstName} {user.lastName}</span>
+                      </div>
+                      {user._id !== localStorage.getItem('user_id') && (
+                        <button
+                          className={`user-follow-btn ${followStatus[user._id] ? 'following' : ''}`}
+                          onClick={() => handleModalFollow(user._id)}
+                        >
+                          <i className={`fas ${followStatus[user._id] ? 'fa-user-minus' : 'fa-user-plus'}`}></i>
+                          {followStatus[user._id] ? 'Following' : 'Follow'}
+                        </button>
                       )}
-                      <span>{user.firstName} {user.lastName}</span>
                     </div>
                   ))
                 ) : (

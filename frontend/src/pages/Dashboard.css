@@ -128,7 +128,7 @@ p, span {
   padding: 2rem;
   border-radius: 12px;
   width: 90%;
-  max-width: 600px;
+  max-width: 800px;
   max-height: 90vh;
   overflow-y: auto;
   color: white;
@@ -1249,37 +1249,38 @@ p, span {
   margin-top: 20px;
   display: flex;
   flex-direction: column;
-  gap: 15px;
-  max-height: 400px;
+  gap: 10px;
+  max-height: 500px;
   overflow-y: auto;
-  padding: 10px;
 }
 
 .user-item {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px 20px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 10px;
+}
+
+.user-left {
   display: flex;
   align-items: center;
   gap: 15px;
-  padding: 12px;
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 8px;
-  transition: all 0.3s ease;
 }
 
-.user-item:hover {
-  background: rgba(255, 255, 255, 0.1);
-}
-
-.user-item img {
-  width: 40px;
-  height: 40px;
+.user-left img {
+  width: 45px;
+  height: 45px;
   border-radius: 50%;
   object-fit: cover;
   border: 2px solid #646cff;
 }
 
-.user-item i {
-  width: 40px;
-  height: 40px;
+.user-left i.fas.fa-user {
+  width: 45px;
+  height: 45px;
   border-radius: 50%;
   background: rgba(100, 108, 255, 0.15);
   color: #646cff;
@@ -1289,10 +1290,46 @@ p, span {
   font-size: 1.2rem;
 }
 
-.user-item span {
+.user-name {
   color: white;
-  font-size: 0.95rem;
+  font-size: 1rem;
   font-weight: 500;
+}
+
+.user-follow-btn {
+  background: #646cff;
+  color: white;
+  border: none;
+  border-radius: 20px;
+  padding: 8px 20px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.user-follow-btn:hover {
+  background: #7c83ff;
+  transform: translateY(-2px);
+}
+
+.user-follow-btn.following {
+  background: transparent;
+  color: #646cff;
+  border: 1px solid #646cff;
+}
+
+.user-follow-btn.following:hover {
+  background: rgba(244, 67, 54, 0.1);
+  color: #f44336;
+  border-color: #f44336;
+}
+
+.user-follow-btn i {
+  font-size: 0.85rem;
 }
 
 .post-stats, .post-actions {
