@@ -267,3 +267,53 @@ def get_follow_status(current_user, user_id):
         }), 200
     except Exception as e:
         return jsonify({'message': str(e)}), 500
+
+# Get user's followers
+@users.route('/<user_id>/followers', methods=['GET'])
+@token_required
+def get_followers(current_user, user_id):
+    """Get list of users who follow the specified user"""
+    try:
+        user = User.find_by_id(user_id)
+        if not user:
+            return jsonify({'message': 'User not found'}), 404
+            
+        followers = []
+        for follower_id in user.get('followers', []):
+            follower = User.find_by_id(follower_id)
+            if follower:
+                followers.append({
+                    '_id': str(follower['_id']),
+                    'firstName': follower['firstName'],
+                    'lastName': follower['lastName'],
+                    'profilePhoto': follower.get('profilePhoto')
+                })
+        
+        return jsonify({'users': followers}), 200
+    except Exception as e:
+        return jsonify({'message': str(e)}), 500
+
+# Get users that the user is following
+@users.route('/<user_id>/following', methods=['GET'])
+@token_required
+def get_following(current_user, user_id):
+    """Get list of users that the specified user follows"""
+    try:
+        user = User.find_by_id(user_id)
+        if not user:
+            return jsonify({'message': 'User not found'}), 404
+            
+        following = []
+        for following_id in user.get('following', []):
+            followed_user = User.find_by_id(following_id)
+            if followed_user:
+                following.append({
+                    '_id': str(followed_user['_id']),
+                    'firstName': followed_user['firstName'],
+                    'lastName': followed_user['lastName'],
+                    'profilePhoto': followed_user.get('profilePhoto')
+                })
+        
+        return jsonify({'users': following}), 200
+    except Exception as e:
+        return jsonify({'message': str(e)}), 500

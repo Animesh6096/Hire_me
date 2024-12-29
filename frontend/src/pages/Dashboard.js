@@ -62,6 +62,9 @@ function Dashboard() {
   const [showInteractions, setShowInteractions] = useState(false);
   const [interactionFilter, setInteractionFilter] = useState('all'); // 'all', 'interested', 'applied'
   const [followStatus, setFollowStatus] = useState({});  // Store follow status for each user
+  const [showFollowersModal, setShowFollowersModal] = useState(false);
+  const [showFollowingModal, setShowFollowingModal] = useState(false);
+  const [followModalUsers, setFollowModalUsers] = useState([]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -324,6 +327,7 @@ function Dashboard() {
       setLoading(true);
       const response = await api.get('/posts/other-posts');
       setOtherPosts(response.data.posts);
+      await fetchInitialFollowStatus(response.data.posts);
       setError(null);
     } catch (err) {
       console.error('Error fetching posts:', err);
@@ -539,6 +543,7 @@ function Dashboard() {
       setLoading(true);
       const response = await api.get('/posts/user-interactions');
       setInteractionPosts(response.data.posts);
+      await fetchInitialFollowStatus(response.data.posts);
       setError(null);
     } catch (err) {
       console.error('Error fetching interaction posts:', err);
@@ -569,28 +574,30 @@ function Dashboard() {
   const handleFollow = async (post) => {
     try {
       const currentUserId = localStorage.getItem('user_id');
-      const creatorId = post.user_id; // Get the creator's ID from post's user_id field
-      
-      console.log('Attempting to follow/unfollow:', { currentUserId, creatorId });
+      const creatorId = post.user_id;
       
       if (!currentUserId || !creatorId) {
         console.log('Missing IDs:', { currentUserId, creatorId });
         return;
       }
 
-      // Call the follow API
       const response = await api.post(`/users/${creatorId}/follow`);
-      console.log('Follow response:', response.data);
-
+      
       // Update the follow status in state
       if (response.data) {
         setFollowStatus(prev => ({
           ...prev,
           [creatorId]: response.data.is_following
         }));
+        
+        // Show success message
+        setSuccessMessage(response.data.message);
+        setTimeout(() => setSuccessMessage(''), 3000);
       }
     } catch (err) {
       console.error('Follow error:', err);
+      setError('Failed to update follow status');
+      setTimeout(() => setError(null), 3000);
     }
   };
 
@@ -601,6 +608,22 @@ function Dashboard() {
         ...prev,
         [userId]: response.data.is_following
       }));
+    } catch (err) {
+      console.error('Error fetching follow status:', err);
+    }
+  };
+
+  const fetchInitialFollowStatus = async (posts) => {
+    try {
+      for (const post of posts) {
+        if (post.user_id && post.user_id !== localStorage.getItem('user_id')) {
+          const response = await api.get(`/users/${post.user_id}/follow-status`);
+          setFollowStatus(prev => ({
+            ...prev,
+            [post.user_id]: response.data.is_following
+          }));
+        }
+      }
     } catch (err) {
       console.error('Error fetching follow status:', err);
     }
@@ -742,11 +765,35 @@ function Dashboard() {
                                 <i className="fas fa-bullhorn"></i>
                                 {userInfo.posts?.length > 0 ? 'Recruiting' : 'Not Recruiting'}
                               </span>
-                              <span className="profile-tag follow-info">
+                            </div>
+                            <div className="profile-follow-info">
+                              <span 
+                                className="profile-tag follow-info clickable" 
+                                onClick={async () => {
+                                  try {
+                                    const response = await api.get(`/users/${userInfo._id}/followers`);
+                                    setFollowModalUsers(response.data.users);
+                                    setShowFollowersModal(true);
+                                  } catch (err) {
+                                    console.error('Error fetching followers:', err);
+                                  }
+                                }}
+                              >
                                 <i className="fas fa-users"></i>
                                 {userInfo.followers?.length || 0} Followers
                               </span>
-                              <span className="profile-tag follow-info">
+                              <span 
+                                className="profile-tag follow-info clickable"
+                                onClick={async () => {
+                                  try {
+                                    const response = await api.get(`/users/${userInfo._id}/following`);
+                                    setFollowModalUsers(response.data.users);
+                                    setShowFollowingModal(true);
+                                  } catch (err) {
+                                    console.error('Error fetching following:', err);
+                                  }
+                                }}
+                              >
                                 <i className="fas fa-user-friends"></i>
                                 {userInfo.following?.length || 0} Following
                               </span>
@@ -1427,6 +1474,43 @@ function Dashboard() {
                   </button>
                 </div>
               </form>
+            </div>
+          </div>
+        )}
+
+        {/* Add the modals for followers/following */}
+        {(showFollowersModal || showFollowingModal) && (
+          <div className="modal-overlay">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h2>{showFollowersModal ? 'Followers' : 'Following'}</h2>
+                <button 
+                  className="close-btn" 
+                  onClick={() => {
+                    setShowFollowersModal(false);
+                    setShowFollowingModal(false);
+                    setFollowModalUsers([]);
+                  }}
+                >
+                  <i className="fas fa-times"></i>
+                </button>
+              </div>
+              <div className="users-list">
+                {followModalUsers.length > 0 ? (
+                  followModalUsers.map((user) => (
+                    <div key={user._id} className="user-item">
+                      {user.profilePhoto ? (
+                        <img src={user.profilePhoto} alt={user.firstName} />
+                      ) : (
+                        <i className="fas fa-user"></i>
+                      )}
+                      <span>{user.firstName} {user.lastName}</span>
+                    </div>
+                  ))
+                ) : (
+                  <p className="no-users">No {showFollowersModal ? 'followers' : 'following'} yet</p>
+                )}
+              </div>
             </div>
           </div>
         )}

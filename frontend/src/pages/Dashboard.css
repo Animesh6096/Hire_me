@@ -1775,4 +1775,28 @@ p, span {
 .profile-tag.follow-info:hover {
   background: rgba(100, 108, 255, 0.25);
   transform: translateY(-2px);
+}
+
+.profile-follow-info {
+  display: flex;
+  gap: 0.8rem;
+  margin: 0.8rem 0;
+}
+
+.profile-tag.follow-info.clickable {
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.profile-tag.follow-info.clickable:hover {
+  background: rgba(100, 108, 255, 0.25);
+  transform: translateY(-2px);
+  box-shadow: 0 2px 8px rgba(100, 108, 255, 0.2);
+}
+
+.no-users {
+  text-align: center;
+  color: rgba(255, 255, 255, 0.6);
+  padding: 20px;
+  font-style: italic;
 } 
