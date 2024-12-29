@@ -742,6 +742,14 @@ function Dashboard() {
                                 <i className="fas fa-bullhorn"></i>
                                 {userInfo.posts?.length > 0 ? 'Recruiting' : 'Not Recruiting'}
                               </span>
+                              <span className="profile-tag follow-info">
+                                <i className="fas fa-users"></i>
+                                {userInfo.followers?.length || 0} Followers
+                              </span>
+                              <span className="profile-tag follow-info">
+                                <i className="fas fa-user-friends"></i>
+                                {userInfo.following?.length || 0} Following
+                              </span>
                             </div>
                             <p className="profile-bio">{userInfo.bio || 'No bio added yet'}</p>
                           </>

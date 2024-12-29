@@ -1759,4 +1759,20 @@ p, span {
   opacity: 0.7;
   cursor: not-allowed;
   transform: none;
+}
+
+.profile-tag.follow-info {
+  background: rgba(100, 108, 255, 0.15);
+  color: #646cff;
+  border: 1px solid rgba(100, 108, 255, 0.3);
+}
+
+.profile-tag.follow-info i {
+  color: #646cff;
+  font-size: 0.9rem;
+}
+
+.profile-tag.follow-info:hover {
+  background: rgba(100, 108, 255, 0.25);
+  transform: translateY(-2px);
 } 
