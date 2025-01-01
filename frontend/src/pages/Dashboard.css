@@ -2108,4 +2108,233 @@ p, span {
 
 .btn-status.completed i {
   color: white !important;
+}
+
+.search-section {
+  padding: 20px;
+  width: 100%;
+}
+
+.search-container {
+  margin-bottom: 30px;
+  width: 100%;
+  max-width: 800px;
+  margin: 0 auto 30px;
+}
+
+.search-input {
+  width: 100%;
+  padding: 15px 25px;
+  font-size: 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  transition: all 0.3s ease;
+  background: rgba(255, 255, 255, 0.05);
+  color: white;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: #646cff;
+  box-shadow: 0 0 0 2px rgba(100, 108, 255, 0.2);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.search-input::placeholder {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.no-results {
+  text-align: center;
+  padding: 40px;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 1.1rem;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  margin: 20px 0;
+}
+
+.loading {
+  text-align: center;
+  padding: 40px;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 1.1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.loading i {
+  color: #646cff;
+  animation: spin 1s linear infinite;
+}
+
+/* Search Results Post Cards - Match Seeking Section */
+.search-section .posts-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(600px, 1fr));
+  gap: 25px;
+  margin-top: 20px;
+}
+
+.search-section .post-card {
+  background: rgba(26, 27, 59, 0.95);
+  border-radius: 12px;
+  padding: 35px;
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.2);
+  backdrop-filter: blur(4px);
+  border: 1px solid rgba(100, 108, 255, 0.1);
+  position: relative;
+  transition: all 0.3s ease;
+}
+
+.search-section .post-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 4px;
+  background: linear-gradient(90deg, #646cff, #8f94fb);
+}
+
+.search-section .post-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 12px 40px 0 rgba(31, 38, 135, 0.25);
+  border-color: rgba(100, 108, 255, 0.2);
+}
+
+.search-section .post-creator {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  margin-bottom: 20px;
+  padding-bottom: 15px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  position: relative;
+}
+
+.search-section .post-creator img {
+  width: 45px;
+  height: 45px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #646cff;
+}
+
+.search-section .post-creator i {
+  width: 45px;
+  height: 45px;
+  border-radius: 50%;
+  background: rgba(100, 108, 255, 0.15);
+  color: #646cff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+}
+
+.search-section .post-creator span {
+  color: white;
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+
+.search-section h3 {
+  color: white;
+  font-size: 1.4rem;
+  margin: 0 0 15px 0;
+}
+
+.search-section p {
+  color: rgba(255, 255, 255, 0.8);
+  margin: 12px 0;
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.search-section strong {
+  color: #646cff;
+  font-weight: 500;
+}
+
+.search-section .post-description {
+  margin-top: 20px;
+  padding-top: 15px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.search-section .post-date {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.9rem;
+  margin-top: 15px;
+}
+
+.search-section .post-date i {
+  color: #646cff;
+}
+
+.search-section .post-actions {
+  display: flex;
+  gap: 15px;
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.search-section .action-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 20px;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  color: white;
+}
+
+.search-section .apply-btn {
+  background: #00a86b;
+}
+
+.search-section .apply-btn:hover {
+  background: #008f5d;
+  transform: translateY(-2px);
+}
+
+.search-section .apply-btn.applied {
+  background: #2c7a62;
+}
+
+.search-section .interest-btn {
+  background: #ff1493;
+}
+
+.search-section .interest-btn:hover {
+  background: #e00f82;
+  transform: translateY(-2px);
+}
+
+.search-section .interest-btn.interested {
+  background: #c71585;
+}
+
+.search-section .comment-btn {
+  background: #1976d2;
+}
+
+.search-section .comment-btn:hover {
+  background: #0d47a1;
+  transform: translateY(-2px);
 } 

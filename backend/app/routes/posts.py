@@ -452,4 +452,36 @@ def toggle_completion_status(current_user_id, post_id):
         return jsonify({"message": "No changes made"}), 200
         
     except Exception as e:
+        return jsonify({"error": str(e)}), 400
+
+@posts.route('/search', methods=['GET'])
+@token_required
+def search_posts(current_user_id):
+    try:
+        search_query = request.args.get('query', '').strip()
+        if not search_query:
+            return jsonify([]), 200
+
+        # Create case-insensitive regex pattern
+        pattern = {'$regex': search_query, '$options': 'i'}
+        
+        # Search in posts collection
+        posts = list(Post.get_collection().find({
+            'jobTitle': pattern
+        }))
+
+        # Convert ObjectId to string for JSON serialization
+        for post in posts:
+            post['_id'] = str(post['_id'])
+            # Get author info
+            author = User.get_collection().find_one({'_id': ObjectId(post['user_id'])})
+            if author:
+                post['author'] = {
+                    'firstName': author.get('firstName', ''),
+                    'lastName': author.get('lastName', ''),
+                    'profilePhoto': author.get('profilePhoto', None)
+                }
+
+        return jsonify(posts), 200
+    except Exception as e:
         return jsonify({"error": str(e)}), 400 
