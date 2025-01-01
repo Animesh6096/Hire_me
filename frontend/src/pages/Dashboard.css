@@ -2069,4 +2069,43 @@ p, span {
 
 .btn-payment i {
   color: white !important;
+}
+
+.status-toggle-btn {
+  background: #6b7280 !important;
+  color: white !important;
+  transition: all 0.3s ease !important;
+}
+
+.status-toggle-btn:hover {
+  background: #4b5563 !important;
+  transform: translateY(-2px);
+}
+
+.status-toggle-btn.completed {
+  background: #10b981 !important;
+}
+
+.status-toggle-btn.completed:hover {
+  background: #059669 !important;
+}
+
+.payment-status-btn {
+  background: #3b82f6 !important;
+  color: white !important;
+  cursor: default !important;
+  opacity: 0.8;
+}
+
+.btn-status.completed {
+  background: #10b981 !important;
+  cursor: default !important;
+}
+
+.btn-status.completed:hover {
+  background: #10b981 !important;
+}
+
+.btn-status.completed i {
+  color: white !important;
 } 

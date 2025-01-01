@@ -370,6 +370,8 @@ def get_working_posts(current_user_id):
         for post in all_working_posts:
             post['_id'] = str(post['_id'])
             post['isWorking'] = True
+            # Add completion status
+            post['isCompleted'] = current_user_id in post.get('completed_by', [])
             
             # Get creator info
             creator = User.get_basic_info(post['user_id'])
@@ -395,14 +397,59 @@ def get_working_users(current_user_id, post_id):
         if post['user_id'] != current_user_id:
             return jsonify({"error": "Unauthorized"}), 403
         
+        # Get list of completed users
+        completed_by = post.get('completed_by', [])
+        
         # Get user details for each working user
         working_users = []
         for user_id in post.get('approved_applicants', []):
             user = User.get_basic_info(user_id)
             if user:
                 user['_id'] = user_id
+                user['isCompleted'] = user_id in completed_by
                 working_users.append(user)
         
         return jsonify({"users": working_users}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+
+@posts.route('/<post_id>/toggle-completion', methods=['POST'])
+@token_required
+def toggle_completion_status(current_user_id, post_id):
+    try:
+        # Get the post
+        post = Post.get_collection().find_one({"_id": ObjectId(post_id)})
+        if not post:
+            return jsonify({"error": "Post not found"}), 404
+            
+        # Check if user is actually working on this post
+        if current_user_id not in post.get('approved_applicants', []):
+            return jsonify({"error": "Unauthorized"}), 403
+            
+        # Get current completion status for this user
+        completed_by = post.get('completed_by', [])
+        
+        if current_user_id in completed_by:
+            # Remove from completed_by if already there
+            result = Post.get_collection().update_one(
+                {"_id": ObjectId(post_id)},
+                {"$pull": {"completed_by": current_user_id}}
+            )
+            is_completed = False
+        else:
+            # Add to completed_by if not there
+            result = Post.get_collection().update_one(
+                {"_id": ObjectId(post_id)},
+                {"$addToSet": {"completed_by": current_user_id}}
+            )
+            is_completed = True
+            
+        if result.modified_count:
+            return jsonify({
+                "message": "Status updated successfully",
+                "is_completed": is_completed
+            }), 200
+        return jsonify({"message": "No changes made"}), 200
+        
     except Exception as e:
         return jsonify({"error": str(e)}), 400 
