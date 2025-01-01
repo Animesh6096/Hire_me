@@ -789,6 +789,21 @@ function Dashboard() {
     fetchWorkingPosts();
   };
 
+  const handleShowWorking = async (postId) => {
+    try {
+      setLoading(true);
+      const response = await api.get(`/posts/${postId}/working-users`);
+      setSelectedUsers(response.data.users);
+      setModalTitle('Working Users');
+      setShowUsersModal(true);
+    } catch (err) {
+      console.error('Error fetching working users:', err);
+      setError('Failed to fetch working users');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="dashboard-container">
       <div className="sidebar">
@@ -1316,6 +1331,13 @@ function Dashboard() {
                       >
                         <i className="fas fa-star"></i>
                         Interested: {post.interests?.length || 0}
+                      </button>
+                      <button 
+                        className="stat-btn working-stat-btn"
+                        onClick={() => handleShowWorking(post._id)}
+                      >
+                        <i className="fas fa-briefcase"></i>
+                        Working: {post.approved_applicants?.length || 0}
                       </button>
                       <button 
                         className="stat-btn"

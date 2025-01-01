@@ -1961,13 +1961,40 @@ p, span {
   align-items: center;
   gap: 8px;
   padding: 8px 16px;
-  background-color: #e2e8f0;
-  color: #4a5568;
+  background-color: #10b981;
+  color: white;
   border-radius: 20px;
   font-size: 0.9rem;
   cursor: default;
+  transition: background-color 0.2s ease;
 }
 
 .working-badge i {
-  color: #4a5568;
+  color: white;
+}
+
+.sidebar-btn.active-working {
+  background: #10b981;
+  color: white;
+}
+
+.sidebar-btn.active-working:hover {
+  background: #059669;
+}
+
+.sidebar-btn.active-working i {
+  color: white;
+}
+
+.working-stat-btn {
+  background-color: #10b981 !important;
+  color: white !important;
+}
+
+.working-stat-btn:hover {
+  background-color: #059669 !important;
+}
+
+.working-stat-btn i {
+  color: white !important;
 } 

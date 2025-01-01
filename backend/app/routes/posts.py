@@ -381,4 +381,28 @@ def get_working_posts(current_user_id):
             "total_working": len(working_posts)
         }), 200
     except Exception as e:
+        return jsonify({"error": str(e)}), 400
+
+@posts.route('/<post_id>/working-users', methods=['GET'])
+@token_required
+def get_working_users(current_user_id, post_id):
+    try:
+        post = Post.get_collection().find_one({"_id": ObjectId(post_id)})
+        if not post:
+            return jsonify({"error": "Post not found"}), 404
+            
+        # Check if current user is the post owner
+        if post['user_id'] != current_user_id:
+            return jsonify({"error": "Unauthorized"}), 403
+        
+        # Get user details for each working user
+        working_users = []
+        for user_id in post.get('approved_applicants', []):
+            user = User.get_basic_info(user_id)
+            if user:
+                user['_id'] = user_id
+                working_users.append(user)
+        
+        return jsonify({"users": working_users}), 200
+    except Exception as e:
         return jsonify({"error": str(e)}), 400 
