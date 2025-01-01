@@ -406,6 +406,7 @@ function Dashboard() {
       setSelectedUsers(response.data.users);
       setModalTitle('Applicants');
       setShowUsersModal(true);
+      setSelectedPostId(postId); // Save the selected post ID for approve/decline actions
     } catch (err) {
       console.error('Error fetching applicants:', err);
       setError('Failed to fetch applicants');
@@ -693,6 +694,58 @@ function Dashboard() {
       fetchFollowStatusForPosts();
     }
   }, [otherPosts, interactionPosts, showOtherPosts, showInteractions]);
+
+  const handleApproveApplicant = async (userId) => {
+    try {
+      setLoading(true);
+      const response = await api.post(`/posts/${selectedPostId}/approve/${userId}`);
+      if (response.status === 200) {
+        // Refresh applicants list
+        const applicantsResponse = await api.get(`/posts/${selectedPostId}/applicants`);
+        setSelectedUsers(applicantsResponse.data.users);
+        setSuccessMessage('Applicant approved successfully');
+        setTimeout(() => setSuccessMessage(''), 3000);
+      }
+    } catch (err) {
+      console.error('Error approving applicant:', err);
+      setError('Failed to approve applicant');
+      setTimeout(() => setError(null), 3000);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeclineApplicant = async (userId) => {
+    try {
+      setLoading(true);
+      const response = await api.post(`/posts/${selectedPostId}/decline/${userId}`);
+      if (response.status === 200) {
+        // Refresh applicants list
+        const applicantsResponse = await api.get(`/posts/${selectedPostId}/applicants`);
+        setSelectedUsers(applicantsResponse.data.users);
+        setSuccessMessage('Applicant declined successfully');
+        setTimeout(() => setSuccessMessage(''), 3000);
+      }
+    } catch (err) {
+      console.error('Error declining applicant:', err);
+      setError('Failed to decline applicant');
+      setTimeout(() => setError(null), 3000);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleChatWithUser = async (userId) => {
+    try {
+      // For now, just log the action. We'll implement chat functionality later
+      console.log('Chat with user:', userId);
+      // You can navigate to chat page or open chat modal here
+    } catch (err) {
+      console.error('Error starting chat:', err);
+      setError('Failed to start chat');
+      setTimeout(() => setError(null), 3000);
+    }
+  };
 
   return (
     <div className="dashboard-container">
@@ -1325,12 +1378,53 @@ function Dashboard() {
           </div>
         )}
 
-        {/* Modal for showing applicants/interested users */}
-        {showUsersModal && selectedUsers && (
+        {/* Modal for showing applicants */}
+        {showUsersModal && selectedUsers && modalTitle === 'Applicants' && (
           <div className="modal-overlay">
             <div className="modal-content">
               <div className="modal-header">
-                <h2>{modalTitle}</h2>
+                <h2>Applicants</h2>
+                <button className="close-btn" onClick={() => setShowUsersModal(false)}>
+                  <i className="fas fa-times"></i>
+                </button>
+              </div>
+              <div className="applicant-container">
+                {selectedUsers.map((user) => (
+                  <div key={user._id} className="applicant-item">
+                    <div className="applicant-left">
+                      {user.profilePhoto ? (
+                        <img src={user.profilePhoto} alt={`${user.firstName}'s profile`} />
+                      ) : (
+                        <div className="profile-placeholder">
+                          <i className="fas fa-user"></i>
+                        </div>
+                      )}
+                      <span>{user.firstName} {user.lastName}</span>
+                    </div>
+                    <div className="applicant-actions">
+                      <button onClick={() => handleApproveApplicant(user._id)} className="btn-approve">
+                        <i className="fas fa-check"></i> Approve
+                      </button>
+                      <button onClick={() => handleDeclineApplicant(user._id)} className="btn-decline">
+                        <i className="fas fa-times"></i> Decline
+                      </button>
+                      <button onClick={() => handleChatWithUser(user._id)} className="btn-chat">
+                        <i className="fas fa-comment"></i> Chat
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Modal for showing interested users */}
+        {showUsersModal && selectedUsers && modalTitle === 'Interested Users' && (
+          <div className="modal-overlay">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h2>Interested Users</h2>
                 <button className="close-btn" onClick={() => setShowUsersModal(false)}>
                   <i className="fas fa-times"></i>
                 </button>

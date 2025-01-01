@@ -1836,4 +1836,100 @@ p, span {
   color: rgba(255, 255, 255, 0.6);
   padding: 20px;
   font-style: italic;
+}
+
+/* Applicant List Styles */
+.applicant-container {
+  padding: 20px;
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+.applicant-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px;
+  margin-bottom: 15px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+}
+
+.applicant-left {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.applicant-left img {
+  width: 45px;
+  height: 45px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.profile-placeholder {
+  width: 45px;
+  height: 45px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.applicant-left span {
+  color: #fff;
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.applicant-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.applicant-actions button {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+}
+
+.applicant-actions button i {
+  font-size: 14px;
+}
+
+.btn-approve {
+  background: #10b981;
+  color: white;
+}
+
+.btn-approve:hover {
+  background: #059669;
+}
+
+.btn-decline {
+  background: #ef4444;
+  color: white;
+}
+
+.btn-decline:hover {
+  background: #dc2626;
+}
+
+.btn-chat {
+  background: #3b82f6;
+  color: white;
+}
+
+.btn-chat:hover {
+  background: #2563eb;
 } 

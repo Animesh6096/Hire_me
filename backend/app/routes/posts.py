@@ -225,3 +225,58 @@ def get_user_interaction_posts(current_user_id):
         }), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 400 
+
+@posts.route('/<post_id>/approve/<user_id>', methods=['POST'])
+@token_required
+def approve_applicant(current_user_id, post_id, user_id):
+    try:
+        post = Post.get_collection().find_one({"_id": ObjectId(post_id)})
+        if not post:
+            return jsonify({"error": "Post not found"}), 404
+            
+        # Check if current user is the post owner
+        if post['user_id'] != current_user_id:
+            return jsonify({"error": "Unauthorized"}), 403
+            
+        # Update post's applicants status
+        result = Post.get_collection().update_one(
+            {"_id": ObjectId(post_id)},
+            {
+                "$addToSet": {"approved_applicants": user_id},
+                "$pull": {"applicants": user_id}
+            }
+        )
+        
+        if result.modified_count:
+            return jsonify({"message": "Applicant approved successfully"}), 200
+        return jsonify({"message": "No changes made"}), 200
+        
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+
+@posts.route('/<post_id>/decline/<user_id>', methods=['POST'])
+@token_required
+def decline_applicant(current_user_id, post_id, user_id):
+    try:
+        post = Post.get_collection().find_one({"_id": ObjectId(post_id)})
+        if not post:
+            return jsonify({"error": "Post not found"}), 404
+            
+        # Check if current user is the post owner
+        if post['user_id'] != current_user_id:
+            return jsonify({"error": "Unauthorized"}), 403
+            
+        # Remove user from applicants
+        result = Post.get_collection().update_one(
+            {"_id": ObjectId(post_id)},
+            {
+                "$pull": {"applicants": user_id}
+            }
+        )
+        
+        if result.modified_count:
+            return jsonify({"message": "Applicant declined successfully"}), 200
+        return jsonify({"message": "No changes made"}), 200
+        
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400 
