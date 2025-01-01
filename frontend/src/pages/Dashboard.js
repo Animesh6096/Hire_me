@@ -1287,7 +1287,7 @@ function Dashboard() {
 
         {/* Main Content Sections */}
         {showPosts && (
-          <div className="posts-container">
+          <div className="posts-container recruiting-section">
             <h2>My Posts</h2>
             {loading ? (
               <p>Loading posts...</p>
@@ -1620,12 +1620,19 @@ function Dashboard() {
                     </p>
                     <div className="post-actions">
                       <button 
-                        className="action-btn comment-btn"
-                        onClick={() => handleShowComments(post._id)}
+                        className="action-btn status-btn"
+                        disabled={true}
+                      >
+                        <i className="fas fa-clock"></i>
+                        On Progress
+                      </button>
+                      <button 
+                        className="action-btn payment-btn"
+                        onClick={() => console.log('Payment clicked')}
                         disabled={loading}
                       >
-                        <i className="fas fa-comment"></i>
-                        Comments ({post.comments?.length || 0})
+                        <i className="fas fa-dollar-sign"></i>
+                        Payment
                       </button>
                     </div>
                   </div>
@@ -1918,6 +1925,43 @@ function Dashboard() {
                 ) : (
                   <p className="no-users">No {showFollowersModal ? 'followers' : 'following'} yet</p>
                 )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {showUsersModal && modalTitle === 'Working Users' && (
+          <div className="modal-overlay">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h2>Working Users</h2>
+                <button className="close-btn" onClick={() => setShowUsersModal(false)}>
+                  <i className="fas fa-times"></i>
+                </button>
+              </div>
+              <div className="applicant-container">
+                {selectedUsers.map((user) => (
+                  <div key={user._id} className="applicant-item">
+                    <div className="applicant-left">
+                      {user.profilePhoto ? (
+                        <img src={user.profilePhoto} alt={`${user.firstName}'s profile`} />
+                      ) : (
+                        <div className="profile-placeholder">
+                          <i className="fas fa-user"></i>
+                        </div>
+                      )}
+                      <span>{user.firstName} {user.lastName}</span>
+                    </div>
+                    <div className="applicant-actions">
+                      <button className="btn-status" disabled>
+                        <i className="fas fa-clock"></i> On Progress
+                      </button>
+                      <button className="btn-payment" onClick={() => console.log('Payment clicked')}>
+                        <i className="fas fa-dollar-sign"></i> Payment
+                      </button>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
