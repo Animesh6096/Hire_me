@@ -317,3 +317,40 @@ def get_following(current_user, user_id):
         return jsonify({'users': following}), 200
     except Exception as e:
         return jsonify({'message': str(e)}), 500
+
+# Search users by name
+@users.route('/search', methods=['GET'])
+@token_required
+def search_users(current_user):
+    """Search users by name"""
+    try:
+        search_query = request.args.get('query', '').strip()
+        if not search_query:
+            return jsonify([]), 200
+
+        # Create case-insensitive regex pattern
+        pattern = {'$regex': search_query, '$options': 'i'}
+        
+        # Search in users collection
+        users = list(User.get_collection().find({
+            '$or': [
+                {'firstName': pattern},
+                {'lastName': pattern}
+            ]
+        }))
+
+        # Convert ObjectId to string and format response
+        formatted_users = []
+        for user in users:
+            if str(user['_id']) != str(current_user['_id']):  # Exclude current user
+                formatted_users.append({
+                    '_id': str(user['_id']),
+                    'firstName': user['firstName'],
+                    'lastName': user['lastName'],
+                    'bio': user.get('bio', ''),
+                    'profilePhoto': user.get('profilePhoto')
+                })
+
+        return jsonify(formatted_users), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400

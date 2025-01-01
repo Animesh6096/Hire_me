@@ -71,6 +71,8 @@ function Dashboard() {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
+  const [searchType, setSearchType] = useState('posts'); // 'posts' or 'users'
+  const [userResults, setUserResults] = useState([]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -834,11 +836,18 @@ function Dashboard() {
   const handleSearch = async () => {
     try {
       setIsSearching(true);
-      const response = await api.get(`/posts/search?query=${encodeURIComponent(searchQuery)}`);
-      setSearchResults(response.data);
+      if (searchType === 'posts') {
+        const response = await api.get(`/posts/search?query=${encodeURIComponent(searchQuery)}`);
+        setSearchResults(response.data);
+        setUserResults([]);
+      } else {
+        const response = await api.get(`/users/search?query=${encodeURIComponent(searchQuery)}`);
+        setUserResults(response.data);
+        setSearchResults([]);
+      }
     } catch (error) {
-      console.error('Error searching posts:', error);
-      setError('Failed to search posts. Please try again.');
+      console.error('Error searching:', error);
+      setError('Failed to search. Please try again.');
     } finally {
       setIsSearching(false);
     }
@@ -1969,15 +1978,20 @@ function Dashboard() {
                     <div key={user._id} className="user-item">
                       <div className="user-left">
                         {user.profilePhoto ? (
-                          <img src={user.profilePhoto} alt={user.firstName} />
+                          <img src={user.profilePhoto} alt={user.firstName} className="user-photo" />
                         ) : (
-                          <i className="fas fa-user"></i>
+                          <div className="user-photo-placeholder">
+                            <i className="fas fa-user"></i>
+                          </div>
                         )}
-                        <span className="user-name">{user.firstName} {user.lastName}</span>
+                        <div className="user-info">
+                          <h3 className="user-name">{user.firstName} {user.lastName}</h3>
+                          <p className="user-bio">{user.bio || 'No bio available'}</p>
+                        </div>
                       </div>
                       {user._id !== localStorage.getItem('user_id') && (
                         <button
-                          className={`user-follow-btn ${followStatus[user._id] ? 'following' : ''}`}
+                          className={`follow-btn ${followStatus[user._id] ? 'following' : ''}`}
                           onClick={() => handleModalFollow(user._id)}
                         >
                           <i className={`fas ${followStatus[user._id] ? 'fa-user-minus' : 'fa-user-plus'}`}></i>
@@ -2039,81 +2053,134 @@ function Dashboard() {
         {showSearch && (
           <div className="search-section">
             <div className="search-container">
+              <div className="search-type-toggle">
+                <button 
+                  className={`toggle-btn ${searchType === 'posts' ? 'active' : ''}`}
+                  onClick={() => setSearchType('posts')}
+                >
+                  <i className="fas fa-briefcase"></i> Posts
+                </button>
+                <button 
+                  className={`toggle-btn ${searchType === 'users' ? 'active' : ''}`}
+                  onClick={() => setSearchType('users')}
+                >
+                  <i className="fas fa-users"></i> People
+                </button>
+              </div>
               <input
                 type="text"
-                placeholder="Search posts by title..."
+                placeholder={searchType === 'posts' ? "Search posts by title..." : "Search people by name..."}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="search-input"
               />
             </div>
-            <div className="posts-grid">
-              {isSearching ? (
-                <div className="loading">Searching...</div>
-              ) : searchResults.length > 0 ? (
-                searchResults.map((post) => (
-                  <div key={post._id} className="post-card">
-                    <div className="post-creator">
-                      {post.author?.profilePhoto ? (
-                        <img src={post.author.profilePhoto} alt="Profile" />
-                      ) : (
-                        <i className="fas fa-user"></i>
-                      )}
-                      <span>{post.author ? `${post.author.firstName} ${post.author.lastName}` : 'Unknown User'}</span>
-                      {post.user_id && post.user_id !== localStorage.getItem('user_id') && (
-                        <button
-                          className={`follow-btn ${followStatus[post.user_id] ? 'following' : ''}`}
-                          onClick={() => handleFollow(post)}
+
+            {isSearching ? (
+              <div className="loading">
+                <i className="fas fa-spinner fa-spin"></i> Searching...
+              </div>
+            ) : searchType === 'posts' ? (
+              <div className="posts-grid">
+                {searchResults.length > 0 ? (
+                  searchResults.map((post) => (
+                    <div key={post._id} className="post-card">
+                      <div className="post-creator">
+                        {post.author?.profilePhoto ? (
+                          <img src={post.author.profilePhoto} alt="Profile" />
+                        ) : (
+                          <i className="fas fa-user"></i>
+                        )}
+                        <span>{post.author ? `${post.author.firstName} ${post.author.lastName}` : 'Unknown User'}</span>
+                        {post.user_id && post.user_id !== localStorage.getItem('user_id') && (
+                          <button
+                            className={`follow-btn ${followStatus[post.user_id] ? 'following' : ''}`}
+                            onClick={() => handleFollow(post)}
+                            disabled={loading}
+                          >
+                            <i className={`fas ${followStatus[post.user_id] ? 'fa-user-minus' : 'fa-user-plus'}`}></i>
+                            {followStatus[post.user_id] ? 'Following' : 'Follow'}
+                          </button>
+                        )}
+                      </div>
+                      <h3>{post.jobTitle}</h3>
+                      <p><strong>Type:</strong> {post.type}</p>
+                      <p><strong>Location:</strong> {post.location}</p>
+                      <p><strong>Required Time:</strong> {post.requiredTime}</p>
+                      <p><strong>Salary:</strong> {post.salary}</p>
+                      <p><strong>Required Skills:</strong> {post.requiredSkills}</p>
+                      <p className="post-description">{post.description}</p>
+                      <p className="post-date">
+                        <i className="fas fa-calendar-alt"></i>
+                        Posted on: {new Date(post.created_at).toLocaleDateString()}
+                      </p>
+                      <div className="post-actions">
+                        <button 
+                          className={`action-btn apply-btn ${post.hasApplied ? 'applied' : ''}`}
+                          onClick={() => handleApply(post._id)}
                           disabled={loading}
                         >
-                          <i className={`fas ${followStatus[post.user_id] ? 'fa-user-minus' : 'fa-user-plus'}`}></i>
-                          {followStatus[post.user_id] ? 'Following' : 'Follow'}
+                          <i className={`fas ${post.hasApplied ? 'fa-check' : 'fa-paper-plane'}`}></i>
+                          {post.hasApplied ? 'Applied' : 'Apply'}
+                        </button>
+                        <button 
+                          className={`action-btn interest-btn ${post.isInterested ? 'interested' : ''}`}
+                          onClick={() => handleInterest(post._id)}
+                          disabled={loading}
+                        >
+                          <i className={`fas ${post.isInterested ? 'fa-star' : 'fa-star'}`}></i>
+                          {post.isInterested ? 'Interested' : 'Interest'}
+                        </button>
+                        <button 
+                          className="action-btn comment-btn"
+                          onClick={() => handleShowComments(post._id)}
+                          disabled={loading}
+                        >
+                          <i className="fas fa-comment"></i>
+                          Comments ({post.comments?.length || 0})
+                        </button>
+                      </div>
+                    </div>
+                  ))
+                ) : searchQuery.trim() ? (
+                  <div className="no-results">No posts found</div>
+                ) : null}
+              </div>
+            ) : (
+              <div className="users-grid">
+                {userResults.length > 0 ? (
+                  userResults.map((user) => (
+                    <div key={user._id} className="user-card">
+                      <div className="user-header">
+                        {user.profilePhoto ? (
+                          <img src={user.profilePhoto} alt={user.firstName} className="user-photo" />
+                        ) : (
+                          <div className="user-photo-placeholder">
+                            <i className="fas fa-user"></i>
+                          </div>
+                        )}
+                        <div className="user-info">
+                          <h3 className="user-name">{user.firstName} {user.lastName}</h3>
+                          <p className="user-bio">{user.bio || 'No bio available'}</p>
+                        </div>
+                      </div>
+                      {user._id !== localStorage.getItem('user_id') && (
+                        <button
+                          className={`follow-btn ${followStatus[user._id] ? 'following' : ''}`}
+                          onClick={() => handleFollow(user)}
+                          disabled={loading}
+                        >
+                          <i className={`fas ${followStatus[user._id] ? 'fa-user-minus' : 'fa-user-plus'}`}></i>
+                          {followStatus[user._id] ? 'Following' : 'Follow'}
                         </button>
                       )}
                     </div>
-                    <h3>{post.jobTitle}</h3>
-                    <p><strong>Type:</strong> {post.type}</p>
-                    <p><strong>Location:</strong> {post.location}</p>
-                    <p><strong>Required Time:</strong> {post.requiredTime}</p>
-                    <p><strong>Salary:</strong> {post.salary}</p>
-                    <p><strong>Required Skills:</strong> {post.requiredSkills}</p>
-                    <p className="post-description">{post.description}</p>
-                    <p className="post-date">
-                      <i className="fas fa-calendar-alt"></i>
-                      Posted on: {new Date(post.created_at).toLocaleDateString()}
-                    </p>
-                    <div className="post-actions">
-                      <button 
-                        className={`action-btn apply-btn ${post.hasApplied ? 'applied' : ''}`}
-                        onClick={() => handleApply(post._id)}
-                        disabled={loading}
-                      >
-                        <i className={`fas ${post.hasApplied ? 'fa-check' : 'fa-paper-plane'}`}></i>
-                        {post.hasApplied ? 'Applied' : 'Apply'}
-                      </button>
-                      <button 
-                        className={`action-btn interest-btn ${post.isInterested ? 'interested' : ''}`}
-                        onClick={() => handleInterest(post._id)}
-                        disabled={loading}
-                      >
-                        <i className={`fas ${post.isInterested ? 'fa-star' : 'fa-star'}`}></i>
-                        {post.isInterested ? 'Interested' : 'Interest'}
-                      </button>
-                      <button 
-                        className="action-btn comment-btn"
-                        onClick={() => handleShowComments(post._id)}
-                        disabled={loading}
-                      >
-                        <i className="fas fa-comment"></i>
-                        Comments ({post.comments?.length || 0})
-                      </button>
-                    </div>
-                  </div>
-                ))
-              ) : searchQuery.trim() ? (
-                <div className="no-results">No posts found</div>
-              ) : null}
-            </div>
+                  ))
+                ) : searchQuery.trim() ? (
+                  <div className="no-results">No users found</div>
+                ) : null}
+              </div>
+            )}
           </div>
         )}
       </div>
