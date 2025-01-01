@@ -1932,4 +1932,26 @@ p, span {
 
 .btn-chat:hover {
   background: #2563eb;
+}
+
+/* Add declined badge styles */
+.applied-badge.declined {
+  background: #dc2626;
+  color: white;
+  padding-right: 2rem;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.applied-badge.declined .remove-badge-btn {
+  position: absolute;
+  right: 0.5rem;
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+}
+
+.applied-badge.declined .remove-badge-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
 } 

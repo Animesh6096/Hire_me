@@ -354,6 +354,21 @@ function Dashboard() {
   const handleApply = async (postId) => {
     try {
       setLoading(true);
+      // If the user was declined, just remove the application from their interactions
+      if (showInteractions) {
+        const currentPost = interactionPosts.find(p => p._id === postId);
+        if (currentPost?.isDeclined) {
+          const response = await api.post(`/posts/${postId}/remove-application`);
+          if (response.status === 200) {
+            fetchInteractionPosts();
+            setSuccessMessage('Application removed');
+            setTimeout(() => setSuccessMessage(''), 3000);
+          }
+          return;
+        }
+      }
+
+      // Normal apply/unapply flow
       const response = await api.post(`/posts/${postId}/apply`);
       if (response.status === 200) {
         // Refresh the posts to get updated status
@@ -1740,15 +1755,16 @@ function Dashboard() {
                     </p>
                     <div className="interaction-badges">
                       {post.hasApplied && (
-                        <span className="badge applied-badge">
-                          <i className="fas fa-paper-plane"></i> Applied
+                        <span className={`badge applied-badge ${post.isDeclined ? 'declined' : ''}`}>
+                          <i className="fas fa-paper-plane"></i>
+                          {post.isDeclined ? 'Your application has been declined' : 'Applied'}
                           <button 
                             className="remove-badge-btn"
                             onClick={(e) => {
                               e.stopPropagation();
                               handleApply(post._id);
                             }}
-                            title="Remove application"
+                            title={post.isDeclined ? 'Remove application' : 'Cancel application'}
                           >
                             <i className="fas fa-times"></i>
                           </button>

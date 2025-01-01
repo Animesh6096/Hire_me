@@ -213,6 +213,11 @@ def get_user_interaction_posts(current_user_id):
             post['_id'] = str(post['_id'])
             post['hasApplied'] = str(post['_id']) in applied_posts
             post['isInterested'] = str(post['_id']) in interested_posts
+            
+            # Check if user was declined for this post
+            declined_applicants = post.get('declined_applicants', [])
+            post['isDeclined'] = current_user_id in declined_applicants
+            
             # Get creator info
             creator = User.get_basic_info(post['user_id'])
             if creator:
@@ -224,7 +229,7 @@ def get_user_interaction_posts(current_user_id):
             "total_applied": len(applied_posts)
         }), 200
     except Exception as e:
-        return jsonify({"error": str(e)}), 400 
+        return jsonify({"error": str(e)}), 400
 
 @posts.route('/<post_id>/approve/<user_id>', methods=['POST'])
 @token_required
@@ -266,16 +271,40 @@ def decline_applicant(current_user_id, post_id, user_id):
         if post['user_id'] != current_user_id:
             return jsonify({"error": "Unauthorized"}), 403
             
-        # Remove user from applicants
+        # Remove user from applicants and add to declined_applicants
         result = Post.get_collection().update_one(
             {"_id": ObjectId(post_id)},
             {
-                "$pull": {"applicants": user_id}
+                "$pull": {"applicants": user_id},
+                "$addToSet": {"declined_applicants": user_id}
             }
         )
         
         if result.modified_count:
             return jsonify({"message": "Applicant declined successfully"}), 200
+        return jsonify({"message": "No changes made"}), 200
+        
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+
+@posts.route('/<post_id>/remove-application', methods=['POST'])
+@token_required
+def remove_application(current_user_id, post_id):
+    try:
+        # Remove user from declined_applicants and clean up user's applied list
+        post_result = Post.get_collection().update_one(
+            {"_id": ObjectId(post_id)},
+            {"$pull": {"declined_applicants": current_user_id}}
+        )
+        
+        # Remove from user's applied list
+        user_result = User.get_collection().update_one(
+            {"_id": ObjectId(current_user_id)},
+            {"$pull": {"applied": post_id}}
+        )
+        
+        if post_result.modified_count or user_result.modified_count:
+            return jsonify({"message": "Application removed successfully"}), 200
         return jsonify({"message": "No changes made"}), 200
         
     except Exception as e:
