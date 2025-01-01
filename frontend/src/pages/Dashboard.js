@@ -804,6 +804,25 @@ function Dashboard() {
     }
   };
 
+  const handleToggleCompletion = async (postId) => {
+    try {
+      setLoading(true);
+      const response = await api.post(`/posts/${postId}/toggle-completion`);
+      if (response.status === 200) {
+        // Refresh working posts to get updated status
+        fetchWorkingPosts();
+        setSuccessMessage('Status updated successfully');
+        setTimeout(() => setSuccessMessage(''), 3000);
+      }
+    } catch (err) {
+      console.error('Error updating completion status:', err);
+      setError('Failed to update status');
+      setTimeout(() => setError(null), 3000);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="dashboard-container">
       <div className="sidebar">
@@ -1287,7 +1306,7 @@ function Dashboard() {
 
         {/* Main Content Sections */}
         {showPosts && (
-          <div className="posts-container">
+          <div className="posts-container recruiting-section">
             <h2>My Posts</h2>
             {loading ? (
               <p>Loading posts...</p>
@@ -1620,12 +1639,19 @@ function Dashboard() {
                     </p>
                     <div className="post-actions">
                       <button 
-                        className="action-btn comment-btn"
-                        onClick={() => handleShowComments(post._id)}
+                        className={`action-btn status-toggle-btn ${post.isCompleted ? 'completed' : ''}`}
+                        onClick={() => handleToggleCompletion(post._id)}
                         disabled={loading}
                       >
-                        <i className="fas fa-comment"></i>
-                        Comments ({post.comments?.length || 0})
+                        <i className={`fas ${post.isCompleted ? 'fa-check-circle' : 'fa-clock'}`}></i>
+                        {post.isCompleted ? 'Completed!' : 'On Progress'}
+                      </button>
+                      <button 
+                        className="action-btn payment-status-btn"
+                        disabled={true}
+                      >
+                        <i className="fas fa-dollar-sign"></i>
+                        Payment Status
                       </button>
                     </div>
                   </div>
@@ -1918,6 +1944,47 @@ function Dashboard() {
                 ) : (
                   <p className="no-users">No {showFollowersModal ? 'followers' : 'following'} yet</p>
                 )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {showUsersModal && modalTitle === 'Working Users' && (
+          <div className="modal-overlay">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h2>Working Users</h2>
+                <button className="close-btn" onClick={() => setShowUsersModal(false)}>
+                  <i className="fas fa-times"></i>
+                </button>
+              </div>
+              <div className="applicant-container">
+                {selectedUsers.map((user) => (
+                  <div key={user._id} className="applicant-item">
+                    <div className="applicant-left">
+                      {user.profilePhoto ? (
+                        <img src={user.profilePhoto} alt={`${user.firstName}'s profile`} />
+                      ) : (
+                        <div className="profile-placeholder">
+                          <i className="fas fa-user"></i>
+                        </div>
+                      )}
+                      <span>{user.firstName} {user.lastName}</span>
+                    </div>
+                    <div className="applicant-actions">
+                      <button 
+                        className={`btn-status ${user.isCompleted ? 'completed' : ''}`}
+                        disabled
+                      >
+                        <i className={`fas ${user.isCompleted ? 'fa-check-circle' : 'fa-clock'}`}></i>
+                        {user.isCompleted ? 'Completed!' : 'On Progress'}
+                      </button>
+                      <button className="btn-payment" onClick={() => console.log('Payment clicked')}>
+                        <i className="fas fa-dollar-sign"></i> Payment
+                      </button>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
