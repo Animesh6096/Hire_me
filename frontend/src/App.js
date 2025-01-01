@@ -4,23 +4,17 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Home from "./pages/Home";
 import Dashboard from "./pages/Dashboard";
+import Payment from "./pages/Payment";
+import Chat from './pages/Chat';
+import AboutUs from './pages/AboutUs';
 import "./App.css";
 
 const App = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
-    const checkAuth = () => {
-      const token = localStorage.getItem('authToken');
-      setIsAuthenticated(!!token);
-    };
-
-    checkAuth();
-    window.addEventListener('popstate', checkAuth);
-    
-    return () => {
-      window.removeEventListener('popstate', checkAuth);
-    };
+    const token = localStorage.getItem('authToken');
+    setIsAuthenticated(!!token);
   }, []);
 
   const handleSignOut = () => {
@@ -28,7 +22,6 @@ const App = () => {
     localStorage.removeItem('userRole');
     localStorage.removeItem('user_id');
     setIsAuthenticated(false);
-    window.history.pushState(null, '', '/');
     window.location.href = '/';
   };
 
@@ -42,9 +35,9 @@ const App = () => {
               {isAuthenticated ? (
                 <>
                   <Link to="/dashboard" className="nav-link">Dashboard</Link>
+                  <Link to="/payment" className="nav-link">Payment</Link>
                   <Link to="/chat" className="nav-link">Chat</Link>
                   <Link to="/about" className="nav-link">About Us</Link>
-                  <i className="fas fa-bell notification-icon"></i>
                   <button onClick={handleSignOut} className="nav-link signout-btn">
                     Sign Out
                   </button>
@@ -71,7 +64,13 @@ const App = () => {
           <Route path="/dashboard" element={
             isAuthenticated ? <Dashboard /> : <Navigate to="/login" />
           } />
-          <Route path="*" element={<Navigate to="/" replace />} />
+          <Route path="/payment" element={
+            isAuthenticated ? <Payment /> : <Navigate to="/login" />
+          } />
+          <Route path="/chat" element={
+            isAuthenticated ? <Chat /> : <Navigate to="/login" />
+          } />
+          <Route path="/about" element={<AboutUs />} />
         </Routes>
       </div>
     </Router>

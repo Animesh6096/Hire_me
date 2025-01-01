@@ -1,0 +1,41 @@
+.about-container {
+  width: 800px;
+  margin: 0 auto;
+  padding: 2rem;
+  background: rgba(26, 27, 59, 0.95);
+  border-radius: 12px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(10px);
+}
+
+.about-container h2 {
+  color: white;
+  margin-bottom: 2rem;
+  font-size: 1.8rem;
+  font-weight: 600;
+  text-align: center;
+}
+
+.about-content {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.about-section {
+  padding: 1.5rem;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+}
+
+.about-section h3 {
+  color: #646cff;
+  margin-bottom: 1rem;
+  font-size: 1.3rem;
+}
+
+.about-section p {
+  color: white;
+  line-height: 1.6;
+  margin: 0;
+} 

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../services/api";
 import "./Dashboard.css";
+import Sidebar from '../components/Sidebar';
 
 function Dashboard() {
   const navigate = useNavigate();
