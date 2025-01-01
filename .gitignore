@@ -47,6 +47,15 @@ Thumbs.db
 # .expo
 .expo/
 
+# Python cache files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Python virtual environment
+venv/
+env/
+.env/
 
 frontend/node_modules
 node_modules/
