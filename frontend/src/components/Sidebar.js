@@ -57,7 +57,8 @@ const Sidebar = ({
           <i className="fas fa-plus-circle"></i>
           Add New Post
         </button>
-        <button className="sidebar-btn">
+        {/* Updated Search Button */}
+        <button className="sidebar-btn" onClick={() => navigate('/search')}>
           <i className="fas fa-search"></i>
           Search
         </button>
@@ -70,4 +71,4 @@ const Sidebar = ({
   );
 };
 
-export default Sidebar; 
+export default Sidebar;

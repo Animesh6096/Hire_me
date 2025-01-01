@@ -8,6 +8,7 @@ import Payment from "./pages/Payment";
 import Chat from './pages/Chat';
 import AboutUs from './pages/AboutUs';
 import "./App.css";
+import SearchComponent from "./pages/SearchComponent";
 
 const App = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -61,6 +62,7 @@ const App = () => {
           <Route path="/register" element={
             !isAuthenticated ? <Register /> : <Navigate to="/dashboard" />
           } />
+          <Route path="/search" element={<SearchComponent />} />
           <Route path="/dashboard" element={
             isAuthenticated ? <Dashboard /> : <Navigate to="/login" />
           } />

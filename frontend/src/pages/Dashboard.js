@@ -3,10 +3,15 @@ import { useNavigate } from "react-router-dom";
 import api from "../services/api";
 import "./Dashboard.css";
 import Sidebar from '../components/Sidebar';
+import SearchModal from "../components/SearchModal";
 
 function Dashboard() {
   const navigate = useNavigate();
   const [showNewPostForm, setShowNewPostForm] = useState(false);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+
+  const openSearchModal = () => setIsSearchOpen(true);
+  const closeSearchModal = () => setIsSearchOpen(false);
   const [showUserInfo, setShowUserInfo] = useState(false);
   const [userInfo, setUserInfo] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -101,8 +106,8 @@ function Dashboard() {
       setLoading(false);
     }
   };
-
-  const fetchUserInfo = async () => {
+  
+const fetchUserInfo = async () => {
     try {
       setLoading(true);
       setError(null);
@@ -1693,6 +1698,8 @@ function Dashboard() {
             )}
           </div>
         )}
+        {/* Search Modal */}
+        <SearchModal isOpen={isSearchOpen} onClose={closeSearchModal} />
       </div>
     </div>
   );
