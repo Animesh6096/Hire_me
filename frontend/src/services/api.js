@@ -37,4 +37,13 @@ api.interceptors.response.use(
     }
 );
 
-export default api;
+// Define API methods
+const apiMethods = {
+    // User follow functionality
+    followUser: (userId) => api.post(`/users/${userId}/follow`),
+    getFollowStatus: (userId) => api.get(`/users/${userId}/follow-status`),
+    
+    // Other existing methods can be added here
+};
+
+export default { ...api, ...apiMethods };

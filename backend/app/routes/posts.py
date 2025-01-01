@@ -184,4 +184,44 @@ def update_post(current_user_id, post_id):
             return jsonify({"message": message}), 200
         return jsonify({"error": message}), 400
     except Exception as e:
+        return jsonify({"error": str(e)}), 400
+
+@posts.route('/user-interactions', methods=['GET'])
+@token_required
+def get_user_interaction_posts(current_user_id):
+    try:
+        # Get the user to access their interested and applied posts
+        user = User.find_by_id(current_user_id)
+        if not user:
+            return jsonify({"error": "User not found"}), 404
+
+        # Get the lists of post IDs
+        interested_posts = user.get('interested', [])
+        applied_posts = user.get('applied', [])
+
+        # Convert string IDs to ObjectId for MongoDB query
+        interested_ids = [ObjectId(pid) for pid in interested_posts]
+        applied_ids = [ObjectId(pid) for pid in applied_posts]
+
+        # Get all posts that the user has interacted with
+        all_interaction_posts = list(Post.get_collection().find({
+            "_id": {"$in": list(set(interested_ids + applied_ids))}
+        }))
+
+        # Add interaction flags and convert ObjectId to string
+        for post in all_interaction_posts:
+            post['_id'] = str(post['_id'])
+            post['hasApplied'] = str(post['_id']) in applied_posts
+            post['isInterested'] = str(post['_id']) in interested_posts
+            # Get creator info
+            creator = User.get_basic_info(post['user_id'])
+            if creator:
+                post['creator'] = creator
+
+        return jsonify({
+            "posts": all_interaction_posts,
+            "total_interested": len(interested_posts),
+            "total_applied": len(applied_posts)
+        }), 200
+    except Exception as e:
         return jsonify({"error": str(e)}), 400 

@@ -7,6 +7,7 @@ from app.config import Config
 from werkzeug.utils import secure_filename
 import os
 from datetime import datetime, timedelta
+from flask_jwt_extended import jwt_required, get_jwt_identity
 
 users = Blueprint('users', __name__)
 
@@ -224,3 +225,95 @@ def delete_experience(current_user, user_id, experience_id):
     if User.delete_experience(user_id, experience_id):
         return jsonify({'message': 'Experience deleted successfully'}), 200
     return jsonify({'message': 'Error deleting experience'}), 400
+
+# Follow or unfollow a user
+@users.route('/<user_id>/follow', methods=['POST'])
+@token_required
+def follow_user(current_user, user_id):
+    """Follow or unfollow a user"""
+    try:
+        # Check if already following
+        is_following = User.is_following(current_user['_id'], user_id)
+        
+        if is_following:
+            # Unfollow
+            if User.unfollow_user(current_user['_id'], user_id):
+                return jsonify({
+                    'message': 'Successfully unfollowed user',
+                    'is_following': False
+                }), 200
+        else:
+            # Follow
+            if User.follow_user(current_user['_id'], user_id):
+                return jsonify({
+                    'message': 'Successfully followed user',
+                    'is_following': True
+                }), 200
+                
+        return jsonify({'message': 'Failed to update follow status'}), 400
+    except Exception as e:
+        return jsonify({'message': str(e)}), 500
+
+# Get the follow status for a user
+@users.route('/<user_id>/follow-status', methods=['GET'])
+@token_required
+def get_follow_status(current_user, user_id):
+    """Get the follow status for a user"""
+    try:
+        is_following = User.is_following(current_user['_id'], user_id)
+        
+        return jsonify({
+            'is_following': is_following
+        }), 200
+    except Exception as e:
+        return jsonify({'message': str(e)}), 500
+
+# Get user's followers
+@users.route('/<user_id>/followers', methods=['GET'])
+@token_required
+def get_followers(current_user, user_id):
+    """Get list of users who follow the specified user"""
+    try:
+        user = User.find_by_id(user_id)
+        if not user:
+            return jsonify({'message': 'User not found'}), 404
+            
+        followers = []
+        for follower_id in user.get('followers', []):
+            follower = User.find_by_id(follower_id)
+            if follower:
+                followers.append({
+                    '_id': str(follower['_id']),
+                    'firstName': follower['firstName'],
+                    'lastName': follower['lastName'],
+                    'profilePhoto': follower.get('profilePhoto')
+                })
+        
+        return jsonify({'users': followers}), 200
+    except Exception as e:
+        return jsonify({'message': str(e)}), 500
+
+# Get users that the user is following
+@users.route('/<user_id>/following', methods=['GET'])
+@token_required
+def get_following(current_user, user_id):
+    """Get list of users that the specified user follows"""
+    try:
+        user = User.find_by_id(user_id)
+        if not user:
+            return jsonify({'message': 'User not found'}), 404
+            
+        following = []
+        for following_id in user.get('following', []):
+            followed_user = User.find_by_id(following_id)
+            if followed_user:
+                following.append({
+                    '_id': str(followed_user['_id']),
+                    'firstName': followed_user['firstName'],
+                    'lastName': followed_user['lastName'],
+                    'profilePhoto': followed_user.get('profilePhoto')
+                })
+        
+        return jsonify({'users': following}), 200
+    except Exception as e:
+        return jsonify({'message': str(e)}), 500

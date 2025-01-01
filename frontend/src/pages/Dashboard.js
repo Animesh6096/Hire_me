@@ -59,6 +59,13 @@ function Dashboard() {
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingPost, setEditingPost] = useState(null);
   const [commentSortNewest, setCommentSortNewest] = useState(false);
+  const [interactionPosts, setInteractionPosts] = useState([]);
+  const [showInteractions, setShowInteractions] = useState(false);
+  const [interactionFilter, setInteractionFilter] = useState('all'); // 'all', 'interested', 'applied'
+  const [followStatus, setFollowStatus] = useState({});  // Store follow status for each user
+  const [showFollowersModal, setShowFollowersModal] = useState(false);
+  const [showFollowingModal, setShowFollowingModal] = useState(false);
+  const [followModalUsers, setFollowModalUsers] = useState([]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -321,6 +328,7 @@ function Dashboard() {
       setLoading(true);
       const response = await api.get('/posts/other-posts');
       setOtherPosts(response.data.posts);
+      await fetchInitialFollowStatus(response.data.posts);
       setError(null);
     } catch (err) {
       console.error('Error fetching posts:', err);
@@ -332,13 +340,15 @@ function Dashboard() {
 
   const handleSeekingClick = () => {
     setShowOtherPosts(true);
-    setShowPosts(false); // Hide recruiting posts if they were showing
+    setShowPosts(false);
+    setShowInteractions(false); // Hide interactions when switching to seeking
     fetchOtherPosts();
   };
 
   const handleRecruitingClick = () => {
     setShowPosts(true);
-    setShowOtherPosts(false); // Hide seeking posts if they were showing
+    setShowOtherPosts(false);
+    setShowInteractions(false); // Hide interactions when switching to recruiting
     fetchUserPosts();
   };
 
@@ -348,7 +358,12 @@ function Dashboard() {
       const response = await api.post(`/posts/${postId}/apply`);
       if (response.status === 200) {
         // Refresh the posts to get updated status
-        fetchOtherPosts();
+        if (showOtherPosts) {
+          fetchOtherPosts();
+        }
+        if (showInteractions) {
+          fetchInteractionPosts();
+        }
         setSuccessMessage(response.data.message);
         setTimeout(() => setSuccessMessage(''), 3000);
       }
@@ -367,7 +382,12 @@ function Dashboard() {
       const response = await api.post(`/posts/${postId}/interest`);
       if (response.status === 200) {
         // Refresh the posts to get updated status
-        fetchOtherPosts();
+        if (showOtherPosts) {
+          fetchOtherPosts();
+        }
+        if (showInteractions) {
+          fetchInteractionPosts();
+        }
         setSuccessMessage(response.data.message);
         setTimeout(() => setSuccessMessage(''), 3000);
       }
@@ -519,23 +539,190 @@ function Dashboard() {
     }
   };
 
+  const fetchInteractionPosts = async () => {
+    try {
+      setLoading(true);
+      const response = await api.get('/posts/user-interactions');
+      setInteractionPosts(response.data.posts);
+      await fetchInitialFollowStatus(response.data.posts);
+      setError(null);
+    } catch (err) {
+      console.error('Error fetching interaction posts:', err);
+      setError('Failed to fetch interaction posts');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleInteractionsClick = () => {
+    setShowInteractions(true);
+    setShowPosts(false);
+    setShowOtherPosts(false);
+    fetchInteractionPosts();
+  };
+
+  const getFilteredPosts = () => {
+    switch (interactionFilter) {
+      case 'interested':
+        return interactionPosts.filter(post => post.isInterested);
+      case 'applied':
+        return interactionPosts.filter(post => post.hasApplied);
+      default:
+        return interactionPosts;
+    }
+  };
+
+  const handleFollow = async (post) => {
+    try {
+      const currentUserId = localStorage.getItem('user_id');
+      const creatorId = post.user_id;
+      
+      if (!currentUserId || !creatorId) {
+        console.log('Missing IDs:', { currentUserId, creatorId });
+        return;
+      }
+
+      const response = await api.post(`/users/${creatorId}/follow`);
+      
+      // Update the follow status in state
+      if (response.data) {
+        setFollowStatus(prev => ({
+          ...prev,
+          [creatorId]: response.data.is_following
+        }));
+        
+        // Show success message
+        setSuccessMessage(response.data.message);
+        setTimeout(() => setSuccessMessage(''), 3000);
+      }
+    } catch (err) {
+      console.error('Follow error:', err);
+      setError('Failed to update follow status');
+      setTimeout(() => setError(null), 3000);
+    }
+  };
+
+  const fetchFollowStatus = async (userId) => {
+    try {
+      const response = await api.getFollowStatus(userId);
+      setFollowStatus(prev => ({
+        ...prev,
+        [userId]: response.data.is_following
+      }));
+    } catch (err) {
+      console.error('Error fetching follow status:', err);
+    }
+  };
+
+  const fetchInitialFollowStatus = async (posts) => {
+    try {
+      for (const post of posts) {
+        if (post.user_id && post.user_id !== localStorage.getItem('user_id')) {
+          const response = await api.get(`/users/${post.user_id}/follow-status`);
+          setFollowStatus(prev => ({
+            ...prev,
+            [post.user_id]: response.data.is_following
+          }));
+        }
+      }
+    } catch (err) {
+      console.error('Error fetching follow status:', err);
+    }
+  };
+
+  const handleModalFollow = async (userId) => {
+    try {
+      const response = await api.post(`/users/${userId}/follow`);
+      
+      if (response.data) {
+        // Update follow status
+        setFollowStatus(prev => ({
+          ...prev,
+          [userId]: response.data.is_following
+        }));
+        
+        // Refresh the lists if needed
+        if (showFollowersModal) {
+          const followersResponse = await api.get(`/users/${userInfo._id}/followers`);
+          setFollowModalUsers(followersResponse.data.users);
+        } else if (showFollowingModal) {
+          const followingResponse = await api.get(`/users/${userInfo._id}/following`);
+          setFollowModalUsers(followingResponse.data.users);
+        }
+
+        setSuccessMessage(response.data.message);
+        setTimeout(() => setSuccessMessage(''), 3000);
+      }
+    } catch (err) {
+      console.error('Follow error:', err);
+      setError('Failed to update follow status');
+      setTimeout(() => setError(null), 3000);
+    }
+  };
+
+  useEffect(() => {
+    const fetchModalUsersFollowStatus = async () => {
+      for (const user of followModalUsers) {
+        try {
+          const response = await api.get(`/users/${user._id}/follow-status`);
+          setFollowStatus(prev => ({
+            ...prev,
+            [user._id]: response.data.is_following
+          }));
+        } catch (err) {
+          console.error('Error fetching follow status:', err);
+        }
+      }
+    };
+
+    if (followModalUsers.length > 0) {
+      fetchModalUsersFollowStatus();
+    }
+  }, [followModalUsers]);
+
+  useEffect(() => {
+    const fetchFollowStatusForPosts = async () => {
+      const posts = showOtherPosts ? otherPosts : interactionPosts;
+      for (const post of posts) {
+        if (post.creator && post.creator._id !== localStorage.getItem('user_id')) {
+          await fetchFollowStatus(post.creator._id);
+        }
+      }
+    };
+
+    if (showOtherPosts || showInteractions) {
+      fetchFollowStatusForPosts();
+    }
+  }, [otherPosts, interactionPosts, showOtherPosts, showInteractions]);
+
   return (
     <div className="dashboard-container">
       <div className="sidebar">
         <div className="sidebar-buttons">
-          <button className="sidebar-btn" onClick={handleSeekingClick}>
+          <button 
+            className={`sidebar-btn ${showOtherPosts ? 'active-seeking' : ''}`} 
+            onClick={handleSeekingClick}
+          >
             <i className="fas fa-search"></i>
             Seeking
           </button>
-          <button className="sidebar-btn" onClick={handleRecruitingClick}>
+          <button 
+            className={`sidebar-btn ${showPosts ? 'active-recruiting' : ''}`}
+            onClick={handleRecruitingClick}
+          >
             <i className="fas fa-user-tie"></i>
             Recruiting
           </button>
-          <button className="sidebar-btn">
+          <button 
+            className={`sidebar-btn ${showInteractions ? 'active-interactions' : ''}`}
+            onClick={handleInteractionsClick}
+          >
             <i className="fas fa-star"></i>
-            Interested
+            My Interactions
           </button>
-          <button className="sidebar-btn">
+          <button 
+            className={`sidebar-btn ${false ? 'active-working' : ''}`}
+          >
             <i className="fas fa-briefcase"></i>
             Currently Working
           </button>
@@ -624,6 +811,44 @@ function Dashboard() {
                             <span className="profile-location">
                               <i className="fas fa-map-marker-alt"></i> {userInfo.country}
                             </span>
+                            <div className="profile-tags">
+                              <span className={`profile-tag ${userInfo.posts?.length > 0 ? 'active' : 'inactive'}`}>
+                                <i className="fas fa-bullhorn"></i>
+                                {userInfo.posts?.length > 0 ? 'Recruiting' : 'Not Recruiting'}
+                              </span>
+                            </div>
+                            <div className="profile-follow-info">
+                              <span 
+                                className="profile-tag follow-info clickable" 
+                                onClick={async () => {
+                                  try {
+                                    const response = await api.get(`/users/${userInfo._id}/followers`);
+                                    setFollowModalUsers(response.data.users);
+                                    setShowFollowersModal(true);
+                                  } catch (err) {
+                                    console.error('Error fetching followers:', err);
+                                  }
+                                }}
+                              >
+                                <i className="fas fa-users"></i>
+                                {userInfo.followers?.length || 0} Followers
+                              </span>
+                              <span 
+                                className="profile-tag follow-info clickable"
+                                onClick={async () => {
+                                  try {
+                                    const response = await api.get(`/users/${userInfo._id}/following`);
+                                    setFollowModalUsers(response.data.users);
+                                    setShowFollowingModal(true);
+                                  } catch (err) {
+                                    console.error('Error fetching following:', err);
+                                  }
+                                }}
+                              >
+                                <i className="fas fa-user-friends"></i>
+                                {userInfo.following?.length || 0} Following
+                              </span>
+                            </div>
                             <p className="profile-bio">{userInfo.bio || 'No bio added yet'}</p>
                           </>
                         )}
@@ -1043,6 +1268,19 @@ function Dashboard() {
                         <i className="fas fa-user"></i>
                       )}
                       <span>{post.creator ? `${post.creator.firstName} ${post.creator.lastName}` : 'Unknown User'}</span>
+                      {post.user_id && post.user_id !== localStorage.getItem('user_id') && (
+                        <button
+                          className={`follow-btn ${followStatus[post.user_id] ? 'following' : ''}`}
+                          onClick={() => {
+                            console.log('Clicking follow for post:', post);
+                            handleFollow(post);
+                          }}
+                          disabled={loading}
+                        >
+                          <i className={`fas ${followStatus[post.user_id] ? 'fa-user-minus' : 'fa-user-plus'}`}></i>
+                          {followStatus[post.user_id] ? 'Following' : 'Follow'}
+                        </button>
+                      )}
                     </div>
                     <h3>{post.jobTitle}</h3>
                     <p><strong>Type:</strong> {post.type}</p>
@@ -1288,6 +1526,171 @@ function Dashboard() {
                 </div>
               </form>
             </div>
+          </div>
+        )}
+
+        {/* Add the modals for followers/following */}
+        {(showFollowersModal || showFollowingModal) && (
+          <div className="modal-overlay">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h2>{showFollowersModal ? 'Followers' : 'Following'}</h2>
+                <button 
+                  className="close-btn" 
+                  onClick={() => {
+                    setShowFollowersModal(false);
+                    setShowFollowingModal(false);
+                    setFollowModalUsers([]);
+                  }}
+                >
+                  <i className="fas fa-times"></i>
+                </button>
+              </div>
+              <div className="users-list">
+                {followModalUsers.length > 0 ? (
+                  followModalUsers.map((user) => (
+                    <div key={user._id} className="user-item">
+                      <div className="user-left">
+                        {user.profilePhoto ? (
+                          <img src={user.profilePhoto} alt={user.firstName} />
+                        ) : (
+                          <i className="fas fa-user"></i>
+                        )}
+                        <span className="user-name">{user.firstName} {user.lastName}</span>
+                      </div>
+                      {user._id !== localStorage.getItem('user_id') && (
+                        <button
+                          className={`user-follow-btn ${followStatus[user._id] ? 'following' : ''}`}
+                          onClick={() => handleModalFollow(user._id)}
+                        >
+                          <i className={`fas ${followStatus[user._id] ? 'fa-user-minus' : 'fa-user-plus'}`}></i>
+                          {followStatus[user._id] ? 'Following' : 'Follow'}
+                        </button>
+                      )}
+                    </div>
+                  ))
+                ) : (
+                  <p className="no-users">No {showFollowersModal ? 'followers' : 'following'} yet</p>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Add the interactions view */}
+        {showInteractions && (
+          <div className="posts-container">
+            <div className="interactions-header">
+              <h2>My Interactions</h2>
+              <div className="filter-buttons">
+                <button 
+                  className={`filter-btn ${interactionFilter === 'all' ? 'active' : ''}`}
+                  onClick={() => setInteractionFilter('all')}
+                >
+                  All Interactions
+                </button>
+                <button 
+                  className={`filter-btn ${interactionFilter === 'interested' ? 'active' : ''}`}
+                  onClick={() => setInteractionFilter('interested')}
+                >
+                  Interested
+                </button>
+                <button 
+                  className={`filter-btn ${interactionFilter === 'applied' ? 'active' : ''}`}
+                  onClick={() => setInteractionFilter('applied')}
+                >
+                  Applied
+                </button>
+              </div>
+            </div>
+            {loading ? (
+              <p>Loading posts...</p>
+            ) : error ? (
+              <p className="error-message">{error}</p>
+            ) : getFilteredPosts().length === 0 ? (
+              <p>No {interactionFilter === 'all' ? 'interactions' : interactionFilter} posts found.</p>
+            ) : (
+              <div className="posts-grid">
+                {getFilteredPosts().map((post) => (
+                  <div key={post._id} className="post-card">
+                    <div className="post-creator">
+                      {post.creator?.profilePhoto ? (
+                        <img src={post.creator.profilePhoto} alt="Creator" />
+                      ) : (
+                        <i className="fas fa-user"></i>
+                      )}
+                      <span>{post.creator ? `${post.creator.firstName} ${post.creator.lastName}` : 'Unknown User'}</span>
+                      {post.user_id && post.user_id !== localStorage.getItem('user_id') && (
+                        <button
+                          className={`follow-btn ${followStatus[post.user_id] ? 'following' : ''}`}
+                          onClick={() => {
+                            console.log('Clicking follow for post:', post);
+                            handleFollow(post);
+                          }}
+                          disabled={loading}
+                        >
+                          <i className={`fas ${followStatus[post.user_id] ? 'fa-user-minus' : 'fa-user-plus'}`}></i>
+                          {followStatus[post.user_id] ? 'Following' : 'Follow'}
+                        </button>
+                      )}
+                    </div>
+                    <h3>{post.jobTitle}</h3>
+                    <p><strong>Type:</strong> {post.type}</p>
+                    <p><strong>Location:</strong> {post.location}</p>
+                    <p><strong>Required Time:</strong> {post.requiredTime}</p>
+                    <p><strong>Salary:</strong> {post.salary}</p>
+                    <p><strong>Required Skills:</strong> {post.requiredSkills}</p>
+                    <p className="post-description">{post.description}</p>
+                    <p className="post-date">
+                      <i className="fas fa-calendar-alt"></i>
+                      Posted on: {new Date(post.created_at).toLocaleDateString()}
+                    </p>
+                    <div className="interaction-badges">
+                      {post.hasApplied && (
+                        <span className="badge applied-badge">
+                          <i className="fas fa-paper-plane"></i> Applied
+                          <button 
+                            className="remove-badge-btn"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleApply(post._id);
+                            }}
+                            title="Remove application"
+                          >
+                            <i className="fas fa-times"></i>
+                          </button>
+                        </span>
+                      )}
+                      {post.isInterested && (
+                        <span className="badge interested-badge">
+                          <i className="fas fa-star"></i> Interested
+                          <button 
+                            className="remove-badge-btn"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleInterest(post._id);
+                            }}
+                            title="Remove interest"
+                          >
+                            <i className="fas fa-times"></i>
+                          </button>
+                        </span>
+                      )}
+                    </div>
+                    <div className="post-actions">
+                      <button 
+                        className="action-btn comment-btn"
+                        onClick={() => handleShowComments(post._id)}
+                        disabled={loading}
+                      >
+                        <i className="fas fa-comment"></i>
+                        Comments ({post.comments?.length || 0})
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
       </div>
