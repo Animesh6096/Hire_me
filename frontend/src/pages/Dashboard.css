@@ -1954,4 +1954,20 @@ p, span {
 
 .applied-badge.declined .remove-badge-btn:hover {
   background: rgba(255, 255, 255, 0.3);
+}
+
+.working-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background-color: #e2e8f0;
+  color: #4a5568;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  cursor: default;
+}
+
+.working-badge i {
+  color: #4a5568;
 } 
