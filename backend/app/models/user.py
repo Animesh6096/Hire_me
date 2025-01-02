@@ -171,7 +171,7 @@ class User:
         except Exception as e:
             print(f"Error deleting education: {str(e)}")
             return False
-
+ 
     @staticmethod
     def update_skills(user_id, skills):
         try:

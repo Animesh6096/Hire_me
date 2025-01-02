@@ -66,6 +66,14 @@ function Dashboard() {
   const [showFollowersModal, setShowFollowersModal] = useState(false);
   const [showFollowingModal, setShowFollowingModal] = useState(false);
   const [followModalUsers, setFollowModalUsers] = useState([]);
+  const [workingPosts, setWorkingPosts] = useState([]);
+  const [showWorking, setShowWorking] = useState(false);
+  const [showSearch, setShowSearch] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [searchType, setSearchType] = useState('posts'); // 'posts' or 'users'
+  const [userResults, setUserResults] = useState([]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -341,20 +349,39 @@ function Dashboard() {
   const handleSeekingClick = () => {
     setShowOtherPosts(true);
     setShowPosts(false);
-    setShowInteractions(false); // Hide interactions when switching to seeking
+    setShowInteractions(false);
+    setShowWorking(false);
+    setShowSearch(false);
     fetchOtherPosts();
   };
 
   const handleRecruitingClick = () => {
     setShowPosts(true);
     setShowOtherPosts(false);
-    setShowInteractions(false); // Hide interactions when switching to recruiting
+    setShowInteractions(false);
+    setShowWorking(false);
+    setShowSearch(false);
     fetchUserPosts();
   };
 
   const handleApply = async (postId) => {
     try {
       setLoading(true);
+      // If the user was declined, just remove the application from their interactions
+      if (showInteractions) {
+        const currentPost = interactionPosts.find(p => p._id === postId);
+        if (currentPost?.isDeclined) {
+          const response = await api.post(`/posts/${postId}/remove-application`);
+          if (response.status === 200) {
+            fetchInteractionPosts();
+            setSuccessMessage('Application removed');
+            setTimeout(() => setSuccessMessage(''), 3000);
+          }
+          return;
+        }
+      }
+
+      // Normal apply/unapply flow
       const response = await api.post(`/posts/${postId}/apply`);
       if (response.status === 200) {
         // Refresh the posts to get updated status
@@ -407,6 +434,7 @@ function Dashboard() {
       setSelectedUsers(response.data.users);
       setModalTitle('Applicants');
       setShowUsersModal(true);
+      setSelectedPostId(postId); // Save the selected post ID for approve/decline actions
     } catch (err) {
       console.error('Error fetching applicants:', err);
       setError('Failed to fetch applicants');
@@ -558,6 +586,8 @@ function Dashboard() {
     setShowInteractions(true);
     setShowPosts(false);
     setShowOtherPosts(false);
+    setShowWorking(false);
+    setShowSearch(false);
     fetchInteractionPosts();
   };
 
@@ -695,6 +725,156 @@ function Dashboard() {
     }
   }, [otherPosts, interactionPosts, showOtherPosts, showInteractions]);
 
+  const handleApproveApplicant = async (userId) => {
+    try {
+      setLoading(true);
+      const response = await api.post(`/posts/${selectedPostId}/approve/${userId}`);
+      if (response.status === 200) {
+        // Refresh applicants list
+        const applicantsResponse = await api.get(`/posts/${selectedPostId}/applicants`);
+        setSelectedUsers(applicantsResponse.data.users);
+        setSuccessMessage('Applicant approved successfully');
+        setTimeout(() => setSuccessMessage(''), 3000);
+      }
+    } catch (err) {
+      console.error('Error approving applicant:', err);
+      setError('Failed to approve applicant');
+      setTimeout(() => setError(null), 3000);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeclineApplicant = async (userId) => {
+    try {
+      setLoading(true);
+      const response = await api.post(`/posts/${selectedPostId}/decline/${userId}`);
+      if (response.status === 200) {
+        // Refresh applicants list
+        const applicantsResponse = await api.get(`/posts/${selectedPostId}/applicants`);
+        setSelectedUsers(applicantsResponse.data.users);
+        setSuccessMessage('Applicant declined successfully');
+        setTimeout(() => setSuccessMessage(''), 3000);
+      }
+    } catch (err) {
+      console.error('Error declining applicant:', err);
+      setError('Failed to decline applicant');
+      setTimeout(() => setError(null), 3000);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleChatWithUser = async (userId) => {
+    try {
+      // For now, just log the action. We'll implement chat functionality later
+      console.log('Chat with user:', userId);
+      // You can navigate to chat page or open chat modal here
+    } catch (err) {
+      console.error('Error starting chat:', err);
+      setError('Failed to start chat');
+      setTimeout(() => setError(null), 3000);
+    }
+  };
+
+  const fetchWorkingPosts = async () => {
+    try {
+      setLoading(true);
+      const response = await api.get('/posts/working-posts');
+      setWorkingPosts(response.data.posts);
+      setError(null);
+    } catch (err) {
+      console.error('Error fetching working posts:', err);
+      setError('Failed to fetch working posts');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleWorkingClick = () => {
+    setShowWorking(true);
+    setShowPosts(false);
+    setShowOtherPosts(false);
+    setShowInteractions(false);
+    setShowSearch(false);
+    fetchWorkingPosts();
+  };
+
+  const handleShowWorking = async (postId) => {
+    try {
+      setLoading(true);
+      const response = await api.get(`/posts/${postId}/working-users`);
+      setSelectedUsers(response.data.users);
+      setModalTitle('Working Users');
+      setShowUsersModal(true);
+    } catch (err) {
+      console.error('Error fetching working users:', err);
+      setError('Failed to fetch working users');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleToggleCompletion = async (postId) => {
+    try {
+      setLoading(true);
+      const response = await api.post(`/posts/${postId}/toggle-completion`);
+      if (response.status === 200) {
+        // Refresh working posts to get updated status
+        fetchWorkingPosts();
+        setSuccessMessage('Status updated successfully');
+        setTimeout(() => setSuccessMessage(''), 3000);
+      }
+    } catch (err) {
+      console.error('Error updating completion status:', err);
+      setError('Failed to update status');
+      setTimeout(() => setError(null), 3000);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSearch = async () => {
+    try {
+      setIsSearching(true);
+      if (searchType === 'posts') {
+        const response = await api.get(`/posts/search?query=${encodeURIComponent(searchQuery)}`);
+        setSearchResults(response.data);
+        setUserResults([]);
+      } else {
+        const response = await api.get(`/users/search?query=${encodeURIComponent(searchQuery)}`);
+        setUserResults(response.data);
+        setSearchResults([]);
+      }
+    } catch (error) {
+      console.error('Error searching:', error);
+      setError('Failed to search. Please try again.');
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  const handleSearchClick = () => {
+    setShowSearch(true);
+    setShowUserInfo(false);
+    setShowNewPostForm(false);
+    setShowPosts(false);
+    setShowOtherPosts(false);
+    setShowInteractions(false);
+    setShowWorking(false);
+  };
+
+  useEffect(() => {
+    if (searchQuery.trim()) {
+      const debounceTimer = setTimeout(() => {
+        handleSearch();
+      }, 300);
+      return () => clearTimeout(debounceTimer);
+    } else {
+      setSearchResults([]);
+    }
+  }, [searchQuery]);
+
   return (
     <div className="dashboard-container">
       <div className="sidebar">
@@ -721,20 +901,24 @@ function Dashboard() {
             My Interactions
           </button>
           <button 
-            className={`sidebar-btn ${false ? 'active-working' : ''}`}
+            className={`sidebar-btn ${showWorking ? 'active-working' : ''}`}
+            onClick={handleWorkingClick}
           >
             <i className="fas fa-briefcase"></i>
             Currently Working
+          </button>
+          <button 
+            onClick={handleSearchClick} 
+            className={`sidebar-btn ${showSearch ? 'active-search' : ''}`}
+          >
+            <i className="fas fa-search"></i>
+            Search
           </button>
         </div>
         <div className="sidebar-bottom">
           <button className="sidebar-btn" onClick={() => setShowNewPostForm(true)}>
             <i className="fas fa-plus-circle"></i>
             Add New Post
-          </button>
-          <button className="sidebar-btn">
-            <i className="fas fa-search"></i>
-            Search
           </button>
           <button className="sidebar-btn" onClick={handleProfileClick}>
             <i className="fas fa-user-circle"></i>
@@ -1058,11 +1242,12 @@ function Dashboard() {
           </div>
         )}
 
+        {/* New Post Form Modal */}
         {showNewPostForm && (
           <div className="modal-overlay">
             <div className="modal-content">
               <div className="modal-header">
-                <h2>Create New Post</h2>
+                <h2>Add New Post</h2>
                 <button className="close-btn" onClick={() => setShowNewPostForm(false)}>
                   <i className="fas fa-times"></i>
                 </button>
@@ -1076,6 +1261,7 @@ function Dashboard() {
                     name="jobTitle"
                     value={newPost.jobTitle}
                     onChange={handleInputChange}
+                    placeholder="Enter job title"
                     required
                   />
                 </div>
@@ -1087,6 +1273,7 @@ function Dashboard() {
                     name="description"
                     value={newPost.description}
                     onChange={handleInputChange}
+                    placeholder="Enter job description"
                     required
                     rows="4"
                   />
@@ -1100,8 +1287,8 @@ function Dashboard() {
                     name="requiredSkills"
                     value={newPost.requiredSkills}
                     onChange={handleInputChange}
+                    placeholder="Enter required skills"
                     required
-                    placeholder="e.g., JavaScript, React, Node.js"
                   />
                 </div>
 
@@ -1113,8 +1300,8 @@ function Dashboard() {
                     name="requiredTime"
                     value={newPost.requiredTime}
                     onChange={handleInputChange}
+                    placeholder="Enter required time"
                     required
-                    placeholder="e.g., Full-time, Part-time, 20hrs/week"
                   />
                 </div>
 
@@ -1126,6 +1313,7 @@ function Dashboard() {
                     name="location"
                     value={newPost.location}
                     onChange={handleInputChange}
+                    placeholder="Enter location"
                     required
                   />
                 </div>
@@ -1153,8 +1341,8 @@ function Dashboard() {
                     name="salary"
                     value={newPost.salary}
                     onChange={handleInputChange}
+                    placeholder="Enter salary"
                     required
-                    placeholder="e.g., $50,000/year or $30-40/hour"
                   />
                 </div>
 
@@ -1171,9 +1359,10 @@ function Dashboard() {
           </div>
         )}
 
+        {/* Main Content Sections */}
         {showPosts && (
-          <div className="posts-container">
-            <h2>Your Job Posts</h2>
+          <div className="posts-container recruiting-section">
+            <h2>My Posts</h2>
             {loading ? (
               <p>Loading posts...</p>
             ) : error ? (
@@ -1218,6 +1407,13 @@ function Dashboard() {
                         Interested: {post.interests?.length || 0}
                       </button>
                       <button 
+                        className="stat-btn working-stat-btn"
+                        onClick={() => handleShowWorking(post._id)}
+                      >
+                        <i className="fas fa-briefcase"></i>
+                        Working: {post.approved_applicants?.length || 0}
+                      </button>
+                      <button 
                         className="stat-btn"
                         onClick={() => handleShowComments(post._id)}
                       >
@@ -1250,7 +1446,7 @@ function Dashboard() {
 
         {showOtherPosts && (
           <div className="posts-container">
-            <h2>Available Job Posts</h2>
+            <h2>Available Posts</h2>
             {loading ? (
               <p>Loading posts...</p>
             ) : error ? (
@@ -1294,22 +1490,31 @@ function Dashboard() {
                       Posted on: {new Date(post.created_at).toLocaleDateString()}
                     </p>
                     <div className="post-actions">
-                      <button 
-                        className={`action-btn apply-btn ${post.hasApplied ? 'applied' : ''}`}
-                        onClick={() => handleApply(post._id)}
-                        disabled={loading}
-                      >
-                        <i className={`fas ${post.hasApplied ? 'fa-check' : 'fa-paper-plane'}`}></i>
-                        {post.hasApplied ? 'Applied' : 'Apply'}
-                      </button>
-                      <button 
-                        className={`action-btn interest-btn ${post.isInterested ? 'interested' : ''}`}
-                        onClick={() => handleInterest(post._id)}
-                        disabled={loading}
-                      >
-                        <i className={`fas ${post.isInterested ? 'fa-star' : 'fa-star'}`}></i>
-                        {post.isInterested ? 'Interested' : 'Interest'}
-                      </button>
+                      {post.isWorking ? (
+                        <span className="working-badge">
+                          <i className="fas fa-briefcase"></i>
+                          Currently Working
+                        </span>
+                      ) : (
+                        <>
+                          <button 
+                            className={`action-btn apply-btn ${post.hasApplied ? 'applied' : ''}`}
+                            onClick={() => handleApply(post._id)}
+                            disabled={loading}
+                          >
+                            <i className={`fas ${post.hasApplied ? 'fa-check' : 'fa-paper-plane'}`}></i>
+                            {post.hasApplied ? 'Applied' : 'Apply'}
+                          </button>
+                          <button 
+                            className={`action-btn interest-btn ${post.isInterested ? 'interested' : ''}`}
+                            onClick={() => handleInterest(post._id)}
+                            disabled={loading}
+                          >
+                            <i className={`fas ${post.isInterested ? 'fa-star' : 'fa-star'}`}></i>
+                            {post.isInterested ? 'Interested' : 'Interest'}
+                          </button>
+                        </>
+                      )}
                       <button 
                         className="action-btn comment-btn"
                         onClick={() => handleShowComments(post._id)}
@@ -1326,12 +1531,237 @@ function Dashboard() {
           </div>
         )}
 
-        {/* Modal for showing applicants/interested users */}
-        {showUsersModal && selectedUsers && (
+        {showInteractions && (
+          <div className="posts-container">
+            <div className="interactions-header">
+              <h2>My Interactions</h2>
+              <div className="filter-buttons">
+                <button 
+                  className="filter-btn"
+                  onClick={() => {
+                    setInteractionFilter('all');
+                    setShowInteractions(true);
+                  }}
+                >
+                  <i className="fas fa-list"></i>
+                  All
+                </button>
+                <button 
+                  className="filter-btn"
+                  onClick={() => {
+                    setInteractionFilter('interested');
+                    setShowInteractions(true);
+                  }}
+                >
+                  <i className="fas fa-star"></i>
+                  Interested
+                </button>
+                <button 
+                  className="filter-btn"
+                  onClick={() => {
+                    setInteractionFilter('applied');
+                    setShowInteractions(true);
+                  }}
+                >
+                  <i className="fas fa-paper-plane"></i>
+                  Applied
+                </button>
+              </div>
+            </div>
+            {loading ? (
+              <p>Loading posts...</p>
+            ) : error ? (
+              <p className="error-message">{error}</p>
+            ) : getFilteredPosts().length === 0 ? (
+              <p>No {interactionFilter === 'all' ? 'interactions' : interactionFilter} posts found.</p>
+            ) : (
+              <div className="posts-grid">
+                {getFilteredPosts().map((post) => (
+                  <div key={post._id} className="post-card">
+                    <div className="post-creator">
+                      {post.creator?.profilePhoto ? (
+                        <img src={post.creator.profilePhoto} alt="Creator" />
+                      ) : (
+                        <i className="fas fa-user"></i>
+                      )}
+                      <span>{post.creator ? `${post.creator.firstName} ${post.creator.lastName}` : 'Unknown User'}</span>
+                      {post.user_id && post.user_id !== localStorage.getItem('user_id') && (
+                        <button
+                          className={`follow-btn ${followStatus[post.user_id] ? 'following' : ''}`}
+                          onClick={() => {
+                            console.log('Clicking follow for post:', post);
+                            handleFollow(post);
+                          }}
+                          disabled={loading}
+                        >
+                          <i className={`fas ${followStatus[post.user_id] ? 'fa-user-minus' : 'fa-user-plus'}`}></i>
+                          {followStatus[post.user_id] ? 'Following' : 'Follow'}
+                        </button>
+                      )}
+                    </div>
+                    <h3>{post.jobTitle}</h3>
+                    <p><strong>Type:</strong> {post.type}</p>
+                    <p><strong>Location:</strong> {post.location}</p>
+                    <p><strong>Required Time:</strong> {post.requiredTime}</p>
+                    <p><strong>Salary:</strong> {post.salary}</p>
+                    <p><strong>Required Skills:</strong> {post.requiredSkills}</p>
+                    <p className="post-description">{post.description}</p>
+                    <p className="post-date">
+                      <i className="fas fa-calendar-alt"></i>
+                      Posted on: {new Date(post.created_at).toLocaleDateString()}
+                    </p>
+                    <div className="interaction-badges">
+                      {post.hasApplied && (
+                        <span className={`badge applied-badge ${post.isDeclined ? 'declined' : ''}`}>
+                          <i className="fas fa-paper-plane"></i>
+                          {post.isDeclined ? 'Your application has been declined' : 'Applied'}
+                          <button 
+                            className="remove-badge-btn"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleApply(post._id);
+                            }}
+                            title={post.isDeclined ? 'Remove application' : 'Cancel application'}
+                          >
+                            <i className="fas fa-times"></i>
+                          </button>
+                        </span>
+                      )}
+                      {post.isInterested && (
+                        <span className="badge interested-badge">
+                          <i className="fas fa-star"></i> Interested
+                          <button 
+                            className="remove-badge-btn"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleInterest(post._id);
+                            }}
+                            title="Remove interest"
+                          >
+                            <i className="fas fa-times"></i>
+                          </button>
+                        </span>
+                      )}
+                    </div>
+                    <div className="post-actions">
+                      <button 
+                        className="action-btn comment-btn"
+                        onClick={() => handleShowComments(post._id)}
+                        disabled={loading}
+                      >
+                        <i className="fas fa-comment"></i>
+                        Comments ({post.comments?.length || 0})
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {showWorking && !showPosts && !showOtherPosts && !showInteractions && (
+          <div className="posts-container">
+            <h2>Currently Working</h2>
+            {loading ? (
+              <p>Loading posts...</p>
+            ) : error ? (
+              <p className="error-message">{error}</p>
+            ) : workingPosts.length === 0 ? (
+              <p>No active work found.</p>
+            ) : (
+              <div className="posts-grid">
+                {workingPosts.map((post) => (
+                  <div key={post._id} className="post-card">
+                    <div className="post-creator">
+                      {post.creator?.profilePhoto ? (
+                        <img src={post.creator.profilePhoto} alt="Creator" />
+                      ) : (
+                        <i className="fas fa-user"></i>
+                      )}
+                      <span>{post.creator ? `${post.creator.firstName} ${post.creator.lastName}` : 'Unknown User'}</span>
+                    </div>
+                    <h3>{post.jobTitle}</h3>
+                    <p><strong>Type:</strong> {post.type}</p>
+                    <p><strong>Location:</strong> {post.location}</p>
+                    <p><strong>Required Time:</strong> {post.requiredTime}</p>
+                    <p><strong>Salary:</strong> {post.salary}</p>
+                    <p><strong>Required Skills:</strong> {post.requiredSkills}</p>
+                    <p className="post-description">{post.description}</p>
+                    <p className="post-date">
+                      <i className="fas fa-calendar-alt"></i>
+                      Posted on: {new Date(post.created_at).toLocaleDateString()}
+                    </p>
+                    <div className="post-actions">
+                      <button 
+                        className={`action-btn status-toggle-btn ${post.isCompleted ? 'completed' : ''}`}
+                        onClick={() => handleToggleCompletion(post._id)}
+                        disabled={loading}
+                      >
+                        <i className={`fas ${post.isCompleted ? 'fa-check-circle' : 'fa-clock'}`}></i>
+                        {post.isCompleted ? 'Completed!' : 'On Progress'}
+                      </button>
+                      <button 
+                        className="action-btn payment-status-btn"
+                        disabled={true}
+                      >
+                        <i className="fas fa-dollar-sign"></i>
+                        Payment Status
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Modals */}
+        {showUsersModal && (
           <div className="modal-overlay">
             <div className="modal-content">
               <div className="modal-header">
-                <h2>{modalTitle}</h2>
+                <h2>Applicants</h2>
+                <button className="close-btn" onClick={() => setShowUsersModal(false)}>
+                  <i className="fas fa-times"></i>
+                </button>
+              </div>
+              <div className="applicant-container">
+                {selectedUsers.map((user) => (
+                  <div key={user._id} className="applicant-item">
+                    <div className="applicant-left">
+                      {user.profilePhoto ? (
+                        <img src={user.profilePhoto} alt={`${user.firstName}'s profile`} />
+                      ) : (
+                        <div className="profile-placeholder">
+                          <i className="fas fa-user"></i>
+                        </div>
+                      )}
+                      <span>{user.firstName} {user.lastName}</span>
+                    </div>
+                    <div className="applicant-actions">
+                      <button onClick={() => handleApproveApplicant(user._id)} className="btn-approve">
+                        <i className="fas fa-check"></i> Approve
+                      </button>
+                      <button onClick={() => handleDeclineApplicant(user._id)} className="btn-decline">
+                        <i className="fas fa-times"></i> Decline
+                      </button>
+                      <button onClick={() => handleChatWithUser(user._id)} className="btn-chat">
+                        <i className="fas fa-comment"></i> Chat
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {showUsersModal && selectedUsers && modalTitle === 'Interested Users' && (
+          <div className="modal-overlay">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h2>Interested Users</h2>
                 <button className="close-btn" onClick={() => setShowUsersModal(false)}>
                   <i className="fas fa-times"></i>
                 </button>
@@ -1352,7 +1782,6 @@ function Dashboard() {
           </div>
         )}
 
-        {/* Modal for showing comments */}
         {showCommentModal && (
           <div className="modal-overlay">
             <div className="modal-content comments-modal">
@@ -1415,7 +1844,6 @@ function Dashboard() {
           </div>
         )}
 
-        {/* Edit Post Modal */}
         {showEditModal && (
           <div className="modal-overlay">
             <div className="modal-content">
@@ -1529,7 +1957,6 @@ function Dashboard() {
           </div>
         )}
 
-        {/* Add the modals for followers/following */}
         {(showFollowersModal || showFollowingModal) && (
           <div className="modal-overlay">
             <div className="modal-content">
@@ -1552,15 +1979,20 @@ function Dashboard() {
                     <div key={user._id} className="user-item">
                       <div className="user-left">
                         {user.profilePhoto ? (
-                          <img src={user.profilePhoto} alt={user.firstName} />
+                          <img src={user.profilePhoto} alt={user.firstName} className="user-photo" />
                         ) : (
-                          <i className="fas fa-user"></i>
+                          <div className="user-photo-placeholder">
+                            <i className="fas fa-user"></i>
+                          </div>
                         )}
-                        <span className="user-name">{user.firstName} {user.lastName}</span>
+                        <div className="user-info">
+                          <h3 className="user-name">{user.firstName} {user.lastName}</h3>
+                          <p className="user-bio">{user.bio || 'No bio available'}</p>
+                        </div>
                       </div>
                       {user._id !== localStorage.getItem('user_id') && (
                         <button
-                          className={`user-follow-btn ${followStatus[user._id] ? 'following' : ''}`}
+                          className={`follow-btn ${followStatus[user._id] ? 'following' : ''}`}
                           onClick={() => handleModalFollow(user._id)}
                         >
                           <i className={`fas ${followStatus[user._id] ? 'fa-user-minus' : 'fa-user-plus'}`}></i>
@@ -1577,118 +2009,177 @@ function Dashboard() {
           </div>
         )}
 
-        {/* Add the interactions view */}
-        {showInteractions && (
-          <div className="posts-container">
-            <div className="interactions-header">
-              <h2>My Interactions</h2>
-              <div className="filter-buttons">
-                <button 
-                  className={`filter-btn ${interactionFilter === 'all' ? 'active' : ''}`}
-                  onClick={() => setInteractionFilter('all')}
-                >
-                  All Interactions
-                </button>
-                <button 
-                  className={`filter-btn ${interactionFilter === 'interested' ? 'active' : ''}`}
-                  onClick={() => setInteractionFilter('interested')}
-                >
-                  Interested
-                </button>
-                <button 
-                  className={`filter-btn ${interactionFilter === 'applied' ? 'active' : ''}`}
-                  onClick={() => setInteractionFilter('applied')}
-                >
-                  Applied
+        {showUsersModal && modalTitle === 'Working Users' && (
+          <div className="modal-overlay">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h2>Working Users</h2>
+                <button className="close-btn" onClick={() => setShowUsersModal(false)}>
+                  <i className="fas fa-times"></i>
                 </button>
               </div>
-            </div>
-            {loading ? (
-              <p>Loading posts...</p>
-            ) : error ? (
-              <p className="error-message">{error}</p>
-            ) : getFilteredPosts().length === 0 ? (
-              <p>No {interactionFilter === 'all' ? 'interactions' : interactionFilter} posts found.</p>
-            ) : (
-              <div className="posts-grid">
-                {getFilteredPosts().map((post) => (
-                  <div key={post._id} className="post-card">
-                    <div className="post-creator">
-                      {post.creator?.profilePhoto ? (
-                        <img src={post.creator.profilePhoto} alt="Creator" />
+              <div className="applicant-container">
+                {selectedUsers.map((user) => (
+                  <div key={user._id} className="applicant-item">
+                    <div className="applicant-left">
+                      {user.profilePhoto ? (
+                        <img src={user.profilePhoto} alt={`${user.firstName}'s profile`} />
                       ) : (
-                        <i className="fas fa-user"></i>
+                        <div className="profile-placeholder">
+                          <i className="fas fa-user"></i>
+                        </div>
                       )}
-                      <span>{post.creator ? `${post.creator.firstName} ${post.creator.lastName}` : 'Unknown User'}</span>
-                      {post.user_id && post.user_id !== localStorage.getItem('user_id') && (
-                        <button
-                          className={`follow-btn ${followStatus[post.user_id] ? 'following' : ''}`}
-                          onClick={() => {
-                            console.log('Clicking follow for post:', post);
-                            handleFollow(post);
-                          }}
-                          disabled={loading}
-                        >
-                          <i className={`fas ${followStatus[post.user_id] ? 'fa-user-minus' : 'fa-user-plus'}`}></i>
-                          {followStatus[post.user_id] ? 'Following' : 'Follow'}
-                        </button>
-                      )}
+                      <span>{user.firstName} {user.lastName}</span>
                     </div>
-                    <h3>{post.jobTitle}</h3>
-                    <p><strong>Type:</strong> {post.type}</p>
-                    <p><strong>Location:</strong> {post.location}</p>
-                    <p><strong>Required Time:</strong> {post.requiredTime}</p>
-                    <p><strong>Salary:</strong> {post.salary}</p>
-                    <p><strong>Required Skills:</strong> {post.requiredSkills}</p>
-                    <p className="post-description">{post.description}</p>
-                    <p className="post-date">
-                      <i className="fas fa-calendar-alt"></i>
-                      Posted on: {new Date(post.created_at).toLocaleDateString()}
-                    </p>
-                    <div className="interaction-badges">
-                      {post.hasApplied && (
-                        <span className="badge applied-badge">
-                          <i className="fas fa-paper-plane"></i> Applied
-                          <button 
-                            className="remove-badge-btn"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleApply(post._id);
-                            }}
-                            title="Remove application"
-                          >
-                            <i className="fas fa-times"></i>
-                          </button>
-                        </span>
-                      )}
-                      {post.isInterested && (
-                        <span className="badge interested-badge">
-                          <i className="fas fa-star"></i> Interested
-                          <button 
-                            className="remove-badge-btn"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleInterest(post._id);
-                            }}
-                            title="Remove interest"
-                          >
-                            <i className="fas fa-times"></i>
-                          </button>
-                        </span>
-                      )}
-                    </div>
-                    <div className="post-actions">
+                    <div className="applicant-actions">
                       <button 
-                        className="action-btn comment-btn"
-                        onClick={() => handleShowComments(post._id)}
-                        disabled={loading}
+                        className={`btn-status ${user.isCompleted ? 'completed' : ''}`}
+                        disabled
                       >
-                        <i className="fas fa-comment"></i>
-                        Comments ({post.comments?.length || 0})
+                        <i className={`fas ${user.isCompleted ? 'fa-check-circle' : 'fa-clock'}`}></i>
+                        {user.isCompleted ? 'Completed!' : 'On Progress'}
+                      </button>
+                      <button className="btn-payment" onClick={() => console.log('Payment clicked')}>
+                        <i className="fas fa-dollar-sign"></i> Payment
                       </button>
                     </div>
                   </div>
                 ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Add search section */}
+        {showSearch && (
+          <div className="search-section">
+            <div className="search-container">
+              <div className="search-type-toggle">
+                <button 
+                  className={`toggle-btn ${searchType === 'posts' ? 'active' : ''}`}
+                  onClick={() => setSearchType('posts')}
+                >
+                  <i className="fas fa-briefcase"></i> Posts
+                </button>
+                <button 
+                  className={`toggle-btn ${searchType === 'users' ? 'active' : ''}`}
+                  onClick={() => setSearchType('users')}
+                >
+                  <i className="fas fa-users"></i> People
+                </button>
+              </div>
+              <input
+                type="text"
+                placeholder={searchType === 'posts' ? "Search posts by title..." : "Search people by name..."}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="search-input"
+              />
+            </div>
+
+            {isSearching ? (
+              <div className="loading">
+                <i className="fas fa-spinner fa-spin"></i> Searching...
+              </div>
+            ) : searchType === 'posts' ? (
+              <div className="posts-grid">
+                {searchResults.length > 0 ? (
+                  searchResults.map((post) => (
+                    <div key={post._id} className="post-card">
+                      <div className="post-creator">
+                        {post.author?.profilePhoto ? (
+                          <img src={post.author.profilePhoto} alt="Profile" />
+                        ) : (
+                          <i className="fas fa-user"></i>
+                        )}
+                        <span>{post.author ? `${post.author.firstName} ${post.author.lastName}` : 'Unknown User'}</span>
+                        {post.user_id && post.user_id !== localStorage.getItem('user_id') && (
+                          <button
+                            className={`follow-btn ${followStatus[post.user_id] ? 'following' : ''}`}
+                            onClick={() => handleFollow(post)}
+                            disabled={loading}
+                          >
+                            <i className={`fas ${followStatus[post.user_id] ? 'fa-user-minus' : 'fa-user-plus'}`}></i>
+                            {followStatus[post.user_id] ? 'Following' : 'Follow'}
+                          </button>
+                        )}
+                      </div>
+                      <h3>{post.jobTitle}</h3>
+                      <p><strong>Type:</strong> {post.type}</p>
+                      <p><strong>Location:</strong> {post.location}</p>
+                      <p><strong>Required Time:</strong> {post.requiredTime}</p>
+                      <p><strong>Salary:</strong> {post.salary}</p>
+                      <p><strong>Required Skills:</strong> {post.requiredSkills}</p>
+                      <p className="post-description">{post.description}</p>
+                      <p className="post-date">
+                        <i className="fas fa-calendar-alt"></i>
+                        Posted on: {new Date(post.created_at).toLocaleDateString()}
+                      </p>
+                      <div className="post-actions">
+                        <button 
+                          className={`action-btn apply-btn ${post.hasApplied ? 'applied' : ''}`}
+                          onClick={() => handleApply(post._id)}
+                          disabled={loading}
+                        >
+                          <i className={`fas ${post.hasApplied ? 'fa-check' : 'fa-paper-plane'}`}></i>
+                          {post.hasApplied ? 'Applied' : 'Apply'}
+                        </button>
+                        <button 
+                          className={`action-btn interest-btn ${post.isInterested ? 'interested' : ''}`}
+                          onClick={() => handleInterest(post._id)}
+                          disabled={loading}
+                        >
+                          <i className={`fas ${post.isInterested ? 'fa-star' : 'fa-star'}`}></i>
+                          {post.isInterested ? 'Interested' : 'Interest'}
+                        </button>
+                        <button 
+                          className="action-btn comment-btn"
+                          onClick={() => handleShowComments(post._id)}
+                          disabled={loading}
+                        >
+                          <i className="fas fa-comment"></i>
+                          Comments ({post.comments?.length || 0})
+                        </button>
+                      </div>
+                    </div>
+                  ))
+                ) : searchQuery.trim() ? (
+                  <div className="no-results">No posts found</div>
+                ) : null}
+              </div>
+            ) : (
+              <div className="users-grid">
+                {userResults.length > 0 ? (
+                  userResults.map((user) => (
+                    <div key={user._id} className="user-card">
+                      <div className="user-header">
+                        {user.profilePhoto ? (
+                          <img src={user.profilePhoto} alt={user.firstName} className="user-photo" />
+                        ) : (
+                          <div className="user-photo-placeholder">
+                            <i className="fas fa-user"></i>
+                          </div>
+                        )}
+                        <div className="user-info">
+                          <h3 className="user-name">{user.firstName} {user.lastName}</h3>
+                          <p className="user-bio">{user.bio || 'No bio available'}</p>
+                        </div>
+                      </div>
+                      {user._id !== localStorage.getItem('user_id') && (
+                        <button
+                          className={`follow-btn ${followStatus[user._id] ? 'following' : ''}`}
+                          onClick={() => handleFollow(user)}
+                          disabled={loading}
+                        >
+                          <i className={`fas ${followStatus[user._id] ? 'fa-user-minus' : 'fa-user-plus'}`}></i>
+                          {followStatus[user._id] ? 'Following' : 'Follow'}
+                        </button>
+                      )}
+                    </div>
+                  ))
+                ) : searchQuery.trim() ? (
+                  <div className="no-results">No users found</div>
+                ) : null}
               </div>
             )}
           </div>

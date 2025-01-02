@@ -72,8 +72,35 @@ def get_user_posts(current_user_id):
 @token_required
 def get_other_posts(current_user_id):
     try:
-        posts = Post.get_other_posts(current_user_id)
-        return jsonify({"posts": posts}), 200
+        # Get the current user to access their working posts
+        user = User.find_by_id(current_user_id)
+        if not user:
+            return jsonify({"error": "User not found"}), 404
+            
+        # Get user's working posts
+        working_posts = user.get('working', [])
+        
+        # Get all posts except user's own posts
+        all_other_posts = list(Post.get_collection().find({
+            "user_id": {"$ne": current_user_id}
+        }))
+        
+        # Add status flags and convert ObjectId to string
+        for post in all_other_posts:
+            post['_id'] = str(post['_id'])
+            post['hasApplied'] = str(post['_id']) in user.get('applied', [])
+            post['isInterested'] = str(post['_id']) in user.get('interested', [])
+            post['isWorking'] = str(post['_id']) in working_posts
+            
+            # Get creator info
+            creator = User.get_basic_info(post['user_id'])
+            if creator:
+                post['creator'] = creator
+                
+        return jsonify({
+            "posts": all_other_posts,
+            "total": len(all_other_posts)
+        }), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 400
 
@@ -213,6 +240,11 @@ def get_user_interaction_posts(current_user_id):
             post['_id'] = str(post['_id'])
             post['hasApplied'] = str(post['_id']) in applied_posts
             post['isInterested'] = str(post['_id']) in interested_posts
+            
+            # Check if user was declined for this post
+            declined_applicants = post.get('declined_applicants', [])
+            post['isDeclined'] = current_user_id in declined_applicants
+            
             # Get creator info
             creator = User.get_basic_info(post['user_id'])
             if creator:
@@ -223,5 +255,233 @@ def get_user_interaction_posts(current_user_id):
             "total_interested": len(interested_posts),
             "total_applied": len(applied_posts)
         }), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+
+@posts.route('/<post_id>/approve/<user_id>', methods=['POST'])
+@token_required
+def approve_applicant(current_user_id, post_id, user_id):
+    try:
+        post = Post.get_collection().find_one({"_id": ObjectId(post_id)})
+        if not post:
+            return jsonify({"error": "Post not found"}), 404
+            
+        # Check if current user is the post owner
+        if post['user_id'] != current_user_id:
+            return jsonify({"error": "Unauthorized"}), 403
+            
+        # Update post's applicants status
+        result = Post.get_collection().update_one(
+            {"_id": ObjectId(post_id)},
+            {
+                "$addToSet": {"approved_applicants": user_id},
+                "$pull": {"applicants": user_id, "declined_applicants": user_id}
+            }
+        )
+        
+        # Add post to user's working list and remove from applied list
+        user_result = User.get_collection().update_one(
+            {"_id": ObjectId(user_id)},
+            {
+                "$addToSet": {"working": post_id},
+                "$pull": {"applied": post_id}
+            }
+        )
+        
+        if result.modified_count or user_result.modified_count:
+            return jsonify({"message": "Applicant approved successfully"}), 200
+        return jsonify({"message": "No changes made"}), 200
+        
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+
+@posts.route('/<post_id>/decline/<user_id>', methods=['POST'])
+@token_required
+def decline_applicant(current_user_id, post_id, user_id):
+    try:
+        post = Post.get_collection().find_one({"_id": ObjectId(post_id)})
+        if not post:
+            return jsonify({"error": "Post not found"}), 404
+            
+        # Check if current user is the post owner
+        if post['user_id'] != current_user_id:
+            return jsonify({"error": "Unauthorized"}), 403
+            
+        # Remove user from applicants and add to declined_applicants
+        result = Post.get_collection().update_one(
+            {"_id": ObjectId(post_id)},
+            {
+                "$pull": {"applicants": user_id},
+                "$addToSet": {"declined_applicants": user_id}
+            }
+        )
+        
+        if result.modified_count:
+            return jsonify({"message": "Applicant declined successfully"}), 200
+        return jsonify({"message": "No changes made"}), 200
+        
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+
+@posts.route('/<post_id>/remove-application', methods=['POST'])
+@token_required
+def remove_application(current_user_id, post_id):
+    try:
+        # Remove user from declined_applicants and clean up user's applied list
+        post_result = Post.get_collection().update_one(
+            {"_id": ObjectId(post_id)},
+            {"$pull": {"declined_applicants": current_user_id}}
+        )
+        
+        # Remove from user's applied list
+        user_result = User.get_collection().update_one(
+            {"_id": ObjectId(current_user_id)},
+            {"$pull": {"applied": post_id}}
+        )
+        
+        if post_result.modified_count or user_result.modified_count:
+            return jsonify({"message": "Application removed successfully"}), 200
+        return jsonify({"message": "No changes made"}), 200
+        
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+
+@posts.route('/working-posts', methods=['GET'])
+@token_required
+def get_working_posts(current_user_id):
+    try:
+        # Get the user to access their working posts
+        user = User.find_by_id(current_user_id)
+        if not user:
+            return jsonify({"error": "User not found"}), 404
+
+        # Get the list of working post IDs
+        working_posts = user.get('working', [])
+
+        # Convert string IDs to ObjectId for MongoDB query
+        working_ids = [ObjectId(pid) for pid in working_posts]
+
+        # Get all posts that the user is working on
+        all_working_posts = list(Post.get_collection().find({
+            "_id": {"$in": working_ids}
+        }))
+
+        # Add status and convert ObjectId to string
+        for post in all_working_posts:
+            post['_id'] = str(post['_id'])
+            post['isWorking'] = True
+            # Add completion status
+            post['isCompleted'] = current_user_id in post.get('completed_by', [])
+            
+            # Get creator info
+            creator = User.get_basic_info(post['user_id'])
+            if creator:
+                post['creator'] = creator
+
+        return jsonify({
+            "posts": all_working_posts,
+            "total_working": len(working_posts)
+        }), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+
+@posts.route('/<post_id>/working-users', methods=['GET'])
+@token_required
+def get_working_users(current_user_id, post_id):
+    try:
+        post = Post.get_collection().find_one({"_id": ObjectId(post_id)})
+        if not post:
+            return jsonify({"error": "Post not found"}), 404
+            
+        # Check if current user is the post owner
+        if post['user_id'] != current_user_id:
+            return jsonify({"error": "Unauthorized"}), 403
+        
+        # Get list of completed users
+        completed_by = post.get('completed_by', [])
+        
+        # Get user details for each working user
+        working_users = []
+        for user_id in post.get('approved_applicants', []):
+            user = User.get_basic_info(user_id)
+            if user:
+                user['_id'] = user_id
+                user['isCompleted'] = user_id in completed_by
+                working_users.append(user)
+        
+        return jsonify({"users": working_users}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+
+@posts.route('/<post_id>/toggle-completion', methods=['POST'])
+@token_required
+def toggle_completion_status(current_user_id, post_id):
+    try:
+        # Get the post
+        post = Post.get_collection().find_one({"_id": ObjectId(post_id)})
+        if not post:
+            return jsonify({"error": "Post not found"}), 404
+            
+        # Check if user is actually working on this post
+        if current_user_id not in post.get('approved_applicants', []):
+            return jsonify({"error": "Unauthorized"}), 403
+            
+        # Get current completion status for this user
+        completed_by = post.get('completed_by', [])
+        
+        if current_user_id in completed_by:
+            # Remove from completed_by if already there
+            result = Post.get_collection().update_one(
+                {"_id": ObjectId(post_id)},
+                {"$pull": {"completed_by": current_user_id}}
+            )
+            is_completed = False
+        else:
+            # Add to completed_by if not there
+            result = Post.get_collection().update_one(
+                {"_id": ObjectId(post_id)},
+                {"$addToSet": {"completed_by": current_user_id}}
+            )
+            is_completed = True
+            
+        if result.modified_count:
+            return jsonify({
+                "message": "Status updated successfully",
+                "is_completed": is_completed
+            }), 200
+        return jsonify({"message": "No changes made"}), 200
+        
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+
+@posts.route('/search', methods=['GET'])
+@token_required
+def search_posts(current_user_id):
+    try:
+        search_query = request.args.get('query', '').strip()
+        if not search_query:
+            return jsonify([]), 200
+
+        # Create case-insensitive regex pattern
+        pattern = {'$regex': search_query, '$options': 'i'}
+        
+        # Search in posts collection
+        posts = list(Post.get_collection().find({
+            'jobTitle': pattern
+        }))
+
+        # Convert ObjectId to string for JSON serialization
+        for post in posts:
+            post['_id'] = str(post['_id'])
+            # Get author info
+            author = User.get_collection().find_one({'_id': ObjectId(post['user_id'])})
+            if author:
+                post['author'] = {
+                    'firstName': author.get('firstName', ''),
+                    'lastName': author.get('lastName', ''),
+                    'profilePhoto': author.get('profilePhoto', None)
+                }
+
+        return jsonify(posts), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 400 
