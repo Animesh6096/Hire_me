@@ -4,6 +4,7 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Home from "./pages/Home";
 import Dashboard from "./pages/Dashboard";
+import AboutUs from './pages/AboutUs';
 import "./App.css";
 
 const App = () => {
@@ -71,6 +72,7 @@ const App = () => {
           <Route path="/dashboard" element={
             isAuthenticated ? <Dashboard /> : <Navigate to="/login" />
           } />
+          <Route path="/about" element={<AboutUs />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </div>
