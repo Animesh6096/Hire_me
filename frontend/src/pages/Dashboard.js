@@ -16,9 +16,6 @@ function Dashboard() {
   const [otherPosts, setOtherPosts] = useState([]);
   const [showPosts, setShowPosts] = useState(false);
   const [showOtherPosts, setShowOtherPosts] = useState(false);
-  const [showNotifications, setShowNotifications] = useState(false);
-  const [notifications, setNotifications] = useState([]);
-  const [notificationUsers, setNotificationUsers] = useState({});
   const [editData, setEditData] = useState({
     firstName: '',
     lastName: '',
@@ -112,37 +109,27 @@ function Dashboard() {
     }
   };
 
-  const fetchUserInfo = async (userIds) => {
+  const fetchUserInfo = async () => {
     try {
-      const token = localStorage.getItem('authToken');
-      const promises = userIds.map(userId =>
-        api.get(`/users/${userId}/basic-info`, {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        })
-      );
-      const userResponses = await Promise.all(promises);
-      
-      const infoMap = {};
-      userResponses.forEach((response, index) => {
-        if (response.data.success) {
-          const user = response.data.user;
-          infoMap[userIds[index]] = {
-            name: `${user.firstName} ${user.lastName}`,
-            profilePhoto: user.profilePhoto
-          };
-        }
-      });
-      setNotificationUsers(infoMap);
-    } catch (error) {
-      console.error('Error fetching user info:', error);
+      setLoading(true);
+      setError(null);
+      const userId = localStorage.getItem('user_id');
+      if (!userId) {
+        throw new Error('User ID not found. Please login again.');
+      }
+      const response = await api.get(`/users/${userId}`);
+      setUserInfo(response.data);
+    } catch (err) {
+      console.error('Error fetching user info:', err);
+      setError(err.message || 'Failed to fetch user information');
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleProfileClick = () => {
     setShowUserInfo(true);
-    fetchUserInfo([localStorage.getItem('user_id')]);
+    fetchUserInfo();
   };
 
   const handleEditClick = () => {
@@ -886,84 +873,6 @@ function Dashboard() {
       setSearchResults([]);
     }
   }, [searchQuery]);
-
-  // Update fetchNotifications function
-  const fetchNotifications = async () => {
-    try {
-      const userId = localStorage.getItem('user_id');
-      const response = await api.get(`/users/${userId}/notifications`);
-      
-      if (response.data.success) {
-        setNotifications(response.data.notifications);
-        // Fetch user info for notifications
-        const userIds = [...new Set(response.data.notifications.map(notif => notif[0]))];
-        fetchUserInfo(userIds);
-      }
-    } catch (error) {
-      console.error('Error fetching notifications:', error);
-    }
-  };
-
-  // Update notification click handler
-  const handleNotificationClick = () => {
-    setShowNotifications(!showNotifications);
-    if (!showNotifications) {
-      fetchNotifications();
-    }
-  };
-
-  // Update notification text formatter
-  const getNotificationText = (notification) => {
-    const [userId, action] = notification;
-    const user = notificationUsers[userId];
-    
-    if (!user) return null;
-    
-    return (
-      <div className="notification-item">
-        <div className="notification-avatar">
-          {user.profilePhoto ? (
-            <img 
-              src={user.profilePhoto} 
-              alt={user.name} 
-              className="avatar-img"
-            />
-          ) : (
-            <div className="avatar-placeholder">
-              {user.name.charAt(0)}
-            </div>
-          )}
-        </div>
-        <span className="notification-text">
-          <strong>{user.name}</strong> started following you!
-        </span>
-      </div>
-    );
-  };
-
-  // Update notification dropdown JSX
-  const renderNotifications = () => {
-    if (!showNotifications) return null;
-
-    return (
-      <div className="notification-dropdown">
-        <div className="notification-header">
-          <h3>Notifications</h3>
-        </div>
-        <div className="notification-list">
-          {notifications.length === 0 ? (
-            <div className="no-notifications">No notifications</div>
-          ) : (
-            notifications.map((notification, index) => (
-              <div key={index}>
-                {getNotificationText(notification)}
-              </div>
-            ))
-          )}
-        </div>
-      </div>
-    );
-  };
 
   return (
     <div className="dashboard-container">
@@ -2274,13 +2183,6 @@ function Dashboard() {
             )}
           </div>
         )}
-
-        <div className="notification-wrapper">
-          <button onClick={handleNotificationClick}>
-            <i className="fas fa-bell"></i>
-          </button>
-          {renderNotifications()}
-        </div>
       </div>
     </div>
   );
