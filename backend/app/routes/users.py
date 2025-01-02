@@ -43,15 +43,6 @@ def login():
         "role": user.get('role', 'User')
     }), 200
 
-# Register route
-@users.route('/register', methods=['POST'])
-def register():
-    data = request.json
-    if User.find_by_email(data['email']):
-        return jsonify({"error": "User already exists"}), 400
-    user_id = User.create(data)
-    return jsonify({"message": "User registered successfully", "user_id": user_id}), 201
-
 # Middleware to verify JWT token
 def token_required(f):
     @wraps(f)
@@ -73,6 +64,15 @@ def token_required(f):
         
         return f(current_user, *args, **kwargs)
     return decorated
+
+# Register route
+@users.route('/register', methods=['POST'])
+def register():
+    data = request.json
+    if User.find_by_email(data['email']):
+        return jsonify({"error": "User already exists"}), 400
+    user_id = User.create(data)
+    return jsonify({"message": "User registered successfully", "user_id": user_id}), 201
 
 # Get user profile
 @users.route('/<user_id>', methods=['GET'])
@@ -354,3 +354,65 @@ def search_users(current_user):
         return jsonify(formatted_users), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 400
+
+# Get user notifications
+@users.route('/<user_id>/notifications', methods=['GET'])
+@token_required
+def get_notifications(current_user, user_id):
+    try:
+        # Check if the user is requesting their own notifications
+        if str(current_user['_id']) != user_id:
+            return jsonify({
+                'success': False,
+                'message': 'Unauthorized to view these notifications'
+            }), 403
+
+        # Get user's notifications
+        user = User.find_by_id(user_id)
+        if not user:
+            return jsonify({
+                'success': False,
+                'message': 'User not found'
+            }), 404
+
+        notifications = user.get('notifications', [])
+        
+        return jsonify({
+            'success': True,
+            'notifications': notifications
+        })
+
+    except Exception as e:
+        print(f"Error fetching notifications: {str(e)}")
+        return jsonify({
+            'success': False,
+            'message': 'Error fetching notifications'
+        }), 500
+
+# Get user's basic info
+@users.route('/<user_id>/basic-info', methods=['GET'])
+@token_required
+def get_basic_info(current_user, user_id):
+    try:
+        user = User.find_by_id(user_id)
+        if not user:
+            return jsonify({
+                'success': False,
+                'message': 'User not found'
+            }), 404
+
+        return jsonify({
+            'success': True,
+            'user': {
+                'firstName': user.get('firstName', ''),
+                'lastName': user.get('lastName', ''),
+                'profilePhoto': user.get('profilePhoto', None)
+            }
+        })
+
+    except Exception as e:
+        print(f"Error fetching user basic info: {str(e)}")
+        return jsonify({
+            'success': False,
+            'message': 'Error fetching user information'
+        }), 500

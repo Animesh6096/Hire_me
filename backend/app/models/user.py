@@ -38,7 +38,8 @@ class User:
             "applied": [],  # Array of post IDs user has applied to
             "interested": [],  # Array of post IDs user is interested in
             "followers": [],  # Array of user IDs who follow this user
-            "following": []   # Array of user IDs this user follows
+            "following": [],   # Array of user IDs this user follows
+            "notifications": []  # Array of notifications with format [id, key]
         }
         result = User.get_collection().insert_one(user)
         return str(result.inserted_id)
@@ -311,19 +312,30 @@ class User:
 
     @staticmethod
     def follow_user(follower_id, user_to_follow_id):
-        """Add follower to user's followers and add user to follower's following"""
+        """
+        Make follower_id follow user_to_follow_id
+        """
         try:
-            # Add follower to user's followers list
-            User.get_collection().update_one(
-                {"_id": ObjectId(user_to_follow_id)},
-                {"$addToSet": {"followers": str(follower_id)}}
-            )
-            # Add user to follower's following list
+            # First check if already following
+            if User.is_following(follower_id, user_to_follow_id):
+                return False
+
+            # Add to following array of follower
             User.get_collection().update_one(
                 {"_id": ObjectId(follower_id)},
-                {"$addToSet": {"following": str(user_to_follow_id)}}
+                {"$push": {"following": str(user_to_follow_id)}}
             )
-            return True
+
+            # Add to followers array of user being followed
+            result = User.get_collection().update_one(
+                {"_id": ObjectId(user_to_follow_id)},
+                {"$push": {"followers": str(follower_id)}}
+            )
+
+            # Add notification for the user being followed
+            User.add_notification(user_to_follow_id, follower_id, "follow")
+
+            return result.modified_count > 0
         except Exception as e:
             print(f"Error following user: {str(e)}")
             return False
@@ -357,4 +369,22 @@ class User:
             return bool(user)
         except Exception as e:
             print(f"Error checking follow status: {str(e)}")
+            return False
+
+    @staticmethod
+    def add_notification(user_id, notification_id, notification_key):
+        """
+        Add a notification to a user's notifications array
+        notification_id: ID of the user who triggered the notification
+        notification_key: Type of notification (e.g., 'follow')
+        """
+        try:
+            notification = [str(notification_id), notification_key]
+            result = User.get_collection().update_one(
+                {"_id": ObjectId(user_id)},
+                {"$push": {"notifications": notification}}
+            )
+            return result.modified_count > 0
+        except Exception as e:
+            print(f"Error adding notification: {str(e)}")
             return False

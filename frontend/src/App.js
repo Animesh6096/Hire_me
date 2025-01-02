@@ -45,7 +45,6 @@ const App = () => {
                   <Link to="/dashboard" className="nav-link">Dashboard</Link>
                   <Link to="/chat" className="nav-link">Chat</Link>
                   <Link to="/about" className="nav-link">About Us</Link>
-                  <i className="fas fa-bell notification-icon"></i>
                   <button onClick={handleSignOut} className="nav-link signout-btn">
                     Sign Out
                   </button>
