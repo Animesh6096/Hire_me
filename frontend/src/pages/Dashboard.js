@@ -73,6 +73,54 @@ function Dashboard() {
   const [isSearching, setIsSearching] = useState(false);
   const [searchType, setSearchType] = useState('posts'); // 'posts' or 'users'
   const [userResults, setUserResults] = useState([]);
+  const [showApplicantProfile, setShowApplicantProfile] = useState(false);
+
+  const demoProfileData = {
+    firstName: "John",
+    lastName: "Doe",
+    profilePhoto: null,
+    country: "United States",
+    bio: "Passionate software developer with 5+ years of experience in full-stack development.",
+    education: [
+      {
+        degree: "Master of Science in Computer Science",
+        institution: "Stanford University",
+        year: "2020"
+      },
+      {
+        degree: "Bachelor of Engineering",
+        institution: "MIT",
+        year: "2018"
+      }
+    ],
+    skills: [
+      "JavaScript",
+      "React",
+      "Node.js",
+      "Python",
+      "MongoDB",
+      "AWS",
+      "Docker"
+    ],
+    experience: [
+      {
+        position: "Senior Software Engineer",
+        company: "Tech Corp",
+        duration: "2020 - Present",
+        description: "Leading a team of developers in building scalable web applications using modern technologies."
+      },
+      {
+        position: "Software Developer",
+        company: "StartUp Inc",
+        duration: "2018 - 2020",
+        description: "Developed and maintained multiple client-facing applications using React and Node.js."
+      }
+    ]
+  };
+
+  const handleShowApplicantProfile = () => {
+    setShowApplicantProfile(true);
+  };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -1745,6 +1793,9 @@ function Dashboard() {
                       <button onClick={() => handleDeclineApplicant(user._id)} className="btn-decline">
                         <i className="fas fa-times"></i> Decline
                       </button>
+                      <button onClick={handleShowApplicantProfile} className="btn-profile">
+                        <i className="fas fa-user"></i> Profile
+                      </button>
                       <button onClick={() => handleChatWithUser(user._id)} className="btn-chat">
                         <i className="fas fa-comment"></i> Chat
                       </button>
@@ -2181,6 +2232,90 @@ function Dashboard() {
                 ) : null}
               </div>
             )}
+          </div>
+        )}
+
+        {showApplicantProfile && (
+          <div className="modal-overlay">
+            <div className="modal-content profile-modal">
+              <div className="modal-header">
+                <h2>Applicant Profile</h2>
+                <button className="close-btn" onClick={() => setShowApplicantProfile(false)}>
+                  <i className="fas fa-times"></i>
+                </button>
+              </div>
+              <div className="user-info-content">
+                <div className="user-info">
+                  <div className="profile-header">
+                    <div className="profile-avatar">
+                      {demoProfileData.profilePhoto ? (
+                        <img src={demoProfileData.profilePhoto} alt="Profile" />
+                      ) : (
+                        <i className="fas fa-user"></i>
+                      )}
+                    </div>
+                    <div className="profile-name">
+                      <h3>{`${demoProfileData.firstName} ${demoProfileData.lastName}`}</h3>
+                      <span className="profile-location">
+                        <i className="fas fa-map-marker-alt"></i> {demoProfileData.country}
+                      </span>
+                      <p className="profile-bio">{demoProfileData.bio}</p>
+                    </div>
+                  </div>
+                  
+                  <div className="profile-details">
+                    <div className="info-card">
+                      <div className="info-card-header">
+                        <i className="fas fa-graduation-cap"></i>
+                        <h4>Education</h4>
+                      </div>
+                      <div className="info-card-content">
+                        {demoProfileData.education.map((edu, index) => (
+                          <div key={index} className="education-item">
+                            <h5>{edu.degree}</h5>
+                            <p>{edu.institution}</p>
+                            <span>{edu.year}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="info-card">
+                      <div className="info-card-header">
+                        <i className="fas fa-code"></i>
+                        <h4>Skills</h4>
+                      </div>
+                      <div className="info-card-content">
+                        <div className="skills-container">
+                          {demoProfileData.skills.map((skill, index) => (
+                            <span key={index} className="skill-tag">{skill}</span>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="profile-details">
+                    <div className="info-card">
+                      <div className="info-card-header">
+                        <i className="fas fa-briefcase"></i>
+                        <h4>Experience</h4>
+                      </div>
+                      <div className="info-card-content">
+                        {demoProfileData.experience.map((exp, index) => (
+                          <div key={index} className="experience-item">
+                            <h5>{exp.position}</h5>
+                            <p>{exp.company}</p>
+                            <span>{exp.duration}</span>
+                            <p className="experience-description">{exp.description}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         )}
       </div>

@@ -2498,4 +2498,27 @@ p, span {
   background: #2c7a62;
   color: white;
   border-color: transparent;
+}
+
+.btn-profile {
+  background-color: #4a90e2;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: background-color 0.2s;
+  margin: 0 4px;
+}
+
+.btn-profile:hover {
+  background-color: #357abd;
+}
+
+.btn-profile i {
+  font-size: 14px;
 } 

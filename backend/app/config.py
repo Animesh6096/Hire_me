@@ -1,5 +1,5 @@
 class Config:
-    MONGO_URI = "mongodb+srv://mashed_potato:bhallagena101@hireme.rjrcf.mongodb.net/?retryWrites=true&w=majority&appName=hireme"
+    MONGO_URI = "mongodb+srv://banimesh2002:okay123@cluster0.trtem.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
     SECRET_KEY = "your-secret-key-here"  # for session management
     DEBUG = True
     # File upload settings
